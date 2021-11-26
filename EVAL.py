@@ -9,6 +9,8 @@ rows_qrels = [row for row in csvreader_qrels]
 rows_qrels = rows_qrels[1:]
 
 # create dict
+# KEYS : Number of Query
+# VALUES : Relevant documents for each query
 qrels_dict = {}
 for elem in rows_qrels:
     if elem[0] not in qrels_dict.keys():
@@ -17,7 +19,9 @@ for elem in rows_qrels:
         # qrels_dict[elem[0]] = qrels_dict.get(elem[0]).append((elem[1],elem[2]))
         qrels_dict.get(elem[0]).append((elem[1],elem[2]))
 
-# print(qrels_dict)
+print('qrels_dictionary: ')
+print(qrels_dict)
+print('\n')
 
 # pandas just for reference
 qrels = pd.read_csv('qrels.csv')
@@ -38,6 +42,8 @@ rows_system_results = rows_system_results[1:]
 # print(rows_system_results)
 
 # create dict
+# KEYS : Number of System
+# VALUES : (query_number,doc_number,rank_of_doc,score)
 system_results_dict = {}
 for elem in rows_system_results:
     if elem[0] not in system_results_dict.keys():
@@ -48,19 +54,20 @@ for elem in rows_system_results:
 
 # print(system_results_dict)
 
+# create dict
+# KEYS_1 : Number of System
+# KEYS_2 : Number of Query
+# VALUES : Documents (query_number,doc_number,rank_of_doc)
 for system in system_results_dict.keys():
-    # print(system)
-    # print(system_results_dict.get(system))
     query_dict = {}
     for query in system_results_dict.get(system):
-        # print(query)
         if query[0] not in query_dict.keys():
             query_dict[query[0]] = [(query[1],query[2],query[3])]
         else:
             query_dict.get(query[0]).append((query[1],query[2],query[3]))
     system_results_dict[system] = query_dict
 
-# print(system_results_dict.get('1').get('1'))
+print(system_results_dict.get('1').get('1'))
 
 system_results = pd.read_csv('system_results.csv')
 # print(system_results)
@@ -84,12 +91,13 @@ def p_10():
         system_queries_precision.append(queries_precission)
     return system_queries_precision
 
+# returns the first element of a tuple : (a,b) -> a
 def tuples_first(lst_tuples):
     return [tpl[0] for tpl in lst_tuples]
 
-system_queries_precision = p_10()
-print('P-10')
-print(system_queries_precision)
+# system_queries_precision = p_10()
+# print('P-10')
+# print(system_queries_precision)
 
 
 # R@50
@@ -110,9 +118,9 @@ def r_50():
         system_queries_recall.append(queries_recall)
     return system_queries_recall
 
-system_queries_recall = r_50()
-print('R-50')
-print(system_queries_recall)
+# system_queries_recall = r_50()
+# print('R-50')
+# print(system_queries_recall)
 
 # R-Precission
 # consider only 'r' elements for each query for each system
@@ -136,8 +144,18 @@ def r_precission():
 
 system_queries_r_precission = r_precission()
 print('R-Precission')
-print(system_queries_r_precission)
+print(system_queries_r_precission[0])
 
+
+# Average-Precision
+def average_precission():
+    system_queries_average_recission = []
+    for system in system_results_dict.keys():
+        queries_avg_precision = []
+        correct_query_count = 0
+        for count,query in enumerate(system_results_dict.get(system).keys()):
+            pass
+    pass
 
 
 
