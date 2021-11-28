@@ -73,7 +73,7 @@ for system in system_results_dict.keys():
 
 # print(system_results_dict.get('1').get('1'))
 
-system_results = pd.read_csv('system_results.csv')
+# system_results = pd.read_csv('system_results.csv')
 # print(system_results)
 
 
@@ -98,6 +98,14 @@ def p_10():
 # returns the first element of a tuple : (a,b) -> a
 def tuples_first(lst_tuples):
     return [tpl[0] for tpl in lst_tuples]
+
+def tuple_second(lst_tuples):
+    return [tpl[1] for tpl in lst_tuples]
+
+def fill_list(lst,size):
+    for i in range(size-len(lst)):
+        lst.append(0)
+    return lst
 
 # system_queries_precision = p_10()
 # print('P-10')
@@ -179,12 +187,12 @@ def average_precission():
                     # print(f'precission : {precission}')
                     query_precisions.append(precission)
                     number_docs_per_query = number_docs_per_query-1
-            print(query_precisions)
+            # print(query_precisions)
             if len(query_precisions) != 0:
                 queries_avg_precision.append(sum(query_precisions)/len(qrels_dict.get(query)))
             else:
                 queries_avg_precision.append(0)
-        print(queries_avg_precision)
+        # print(queries_avg_precision)
         system_queries_average_precission.append(queries_avg_precision)
     return system_queries_average_precission
 
@@ -235,13 +243,12 @@ def nDCG_10():
         queries_NDG = []
         for query in system_results_dict.get(system).keys():
             dg_lst = []
-            ideal_order_souce = []
+            ideal_order_source = fill_list([int(a) for a in tuple_second(qrels_dict.get(query))],10)
+            # print(ideal_order_source)
             for count,doc in enumerate(system_results_dict.get(system).get(query)[:10]):
                 if doc[0] in tuples_first(qrels_dict.get(query)):
                     rel = int(find_relevance(qrels_dict.get(query),doc[0]))
                     rank = int(doc[1])
-                    print(rel)
-                    ideal_order_souce.append(rel)
                     if rank == 1:
                         dg = rel
                         dg_lst.append(dg)
@@ -252,31 +259,125 @@ def nDCG_10():
                     dg = 0
                     rel = 0
                     dg_lst.append(dg)
-                    ideal_order_souce.append(rel)
-            print(dg_lst)
+            # print(dg_lst)
             dcg = cumulative_dg(dg_lst)
-            print(dcg)
-            ideal_order_souce.sort()
-            ideal_order_souce.reverse()
-            print(ideal_order_souce)
-            idcg = cumulative_dg(ideal_dcg(ideal_order_souce))
-            print(idcg)
+            # print(dcg)
+            ideal_order_source.sort()
+            ideal_order_source.reverse()
+            # print(ideal_order_source)
+            idcg = cumulative_dg(ideal_dcg(ideal_order_source))
+            # print(idcg)
 
             ndcg = divide_lst_lst(dcg,idcg)
-            print(ndcg)
+            # print(ndcg)
             result = ndcg[len(ndcg)-1]
 
             queries_NDG.append(result)
-            break
-        break
+            # break
+        # break
         system_queries_DG.append(queries_NDG)
 
     return system_queries_DG
 
 
+# system_queries_DG = nDCG_10()
+# print(system_queries_DG)
 
 
-system_queries_DG = nDCG_10()
-print(system_queries_DG)
+# nDCG@20: normalized discount cumulative gain at cutoff 20
+def nDCG_20():
+    system_queries_DG = []
+    for system in system_results_dict.keys():
+        queries_NDG = []
+        for query in system_results_dict.get(system).keys():
+            dg_lst = []
+            ideal_order_source = fill_list([int(a) for a in tuple_second(qrels_dict.get(query))],20)
+            # print(ideal_order_source)
+            for count,doc in enumerate(system_results_dict.get(system).get(query)[:20]):
+                if doc[0] in tuples_first(qrels_dict.get(query)):
+                    rel = int(find_relevance(qrels_dict.get(query),doc[0]))
+                    rank = int(doc[1])
+                    if rank == 1:
+                        dg = rel
+                        dg_lst.append(dg)
+                    else:
+                        dg = rel / math.log(rank,2)
+                        dg_lst.append(dg)
+                else:
+                    dg = 0
+                    rel = 0
+                    dg_lst.append(dg)
+            # print(dg_lst)
+            dcg = cumulative_dg(dg_lst)
+            # print(dcg)
+            ideal_order_source.sort()
+            ideal_order_source.reverse()
+            # print(ideal_order_source)
+            idcg = cumulative_dg(ideal_dcg(ideal_order_source))
+            # print(idcg)
+
+            ndcg = divide_lst_lst(dcg,idcg)
+            # print(ndcg)
+            result = ndcg[len(ndcg)-1]
+
+            queries_NDG.append(result)
+            # break
+        # break
+        system_queries_DG.append(queries_NDG)
+
+    return system_queries_DG
+
+
+# system_queries_DG = nDCG_20()
+# print(system_queries_DG)
+
+
+
+p_10_var = p_10()
+
+r_50_var = r_50()
+
+r_precission_var = r_precission()
+
+average_precission_var = average_precission()
+print(average_precission_var)
+nDCG_10_var = nDCG_10()
+nDCG_20_var = nDCG_20()
+# system_results_dict
+# Generate output!
+output = open("ir_eval.csv", "w+")
+for count_1,system in enumerate(system_results_dict):
+    system_output = []
+    p_10_mean= 0
+    r_50_mean = 0
+    r_precission_mean = 0
+    ap_mean = 0
+    ndcg10_mean = 0
+    ndcg20_mean = 0
+    for count_2, query in enumerate(qrels_dict):
+        query_output = [str(count_1+1),str(count_2+1),str(round(p_10_var[count_1][count_2][1],3)),str(round(r_50_var[count_1][count_2][1],3)),
+                        str(round(r_precission_var[count_1][count_2][1],3)),str(round(average_precission_var[count_1][count_2],3)),
+                        str(round(nDCG_10_var[count_1][count_2],1)),str(round(nDCG_20_var[count_1][count_2],3))]
+        p_10_mean = p_10_mean + p_10_var[count_1][count_2][1]
+        r_50_mean = r_50_mean + r_50_var[count_1][count_2][1]
+        r_precission_mean = r_precission_mean + r_precission_var[count_1][count_2][1]
+        ap_mean = ap_mean + average_precission_var[count_1][count_2]
+        ndcg10_mean = ndcg10_mean + nDCG_10_var[count_1][count_2]
+        ndcg20_mean = ndcg20_mean + nDCG_20_var[count_1][count_2]
+
+        query_output_str = ','.join(query_output)
+        output.write(query_output_str + '\n')
+    query_mean_output = [str(count_1+1),'mean',str(round(p_10_mean/(count_2+1),3)),str(round(r_50_mean/(count_2+1),3)),str(round(r_precission_mean/(count_2+1),3)),
+                         str(round(ap_mean/(count_2+1),3)),str(round(ndcg10_mean/(count_2+1),3)),str(round(ndcg20_mean/(count_2+1),3))]
+    query_mean_output_str = ','.join(query_mean_output)
+    output.write(query_mean_output_str + '\n')
+
+
+
+
+
+
+
+
 
 
