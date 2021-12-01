@@ -1,26 +1,15 @@
-import csv
 import math
-import pandas as pd
-import re
-import collections
-from nltk.stem import PorterStemmer
+
 
 # FILE READING
 # each row is of the format:
 #                   [ book , verse ]
-file = open('train_and_dev.tsv')
-file = csv.reader(file, delimiter="\t")
-file_lst = [row for row in file]
-
-print(len(file_lst))
-
 file_lst = []
 with open('train_and_dev.tsv','r') as f:
     for line in f.readlines():
         (corpus_id,text) = line.split("\t",1)
         file_lst.append((corpus_id,text))
-print('Zori')
-print(len(file_lst))
+
 
 
 # WORD FREQUENCY ANALYSIS
@@ -184,14 +173,6 @@ for word in all_keys:
         if 'Quran' not in docs:
             complete_dict.get(word)['Quran'] = dict_Quran_words_count.get(word,0)
 
-# print('Big Dict')
-# print(complete_dict.get('histori',0))
-# print('OT')
-# print(dict_OT_words_count.get('histori',0))
-# print('NT')
-# print(dict_NT_words_count.get('histori',0))
-# print('Quran')
-# print(dict_Quran_words_count.get('histori',0))
 
 # word : book
 def mutual_information(word,book):
@@ -339,15 +320,95 @@ def controller():
     generate_output(results_MI, False, True)
 
 
-controller()
+# controller()
 
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#          *******************************************
+#                           2. LDA
+#          *******************************************
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+from gensim.corpora.dictionary import Dictionary
+from gensim.models.ldamodel import LdaModel
+from nltk.stem.porter import *
+"""
+    Run LDA on the entire set of verses from ALL corpora together. 
+    Set k=20 topics and inspect the results. 
+"""
+# print(file_lst_preprocessed)
+
+all = [sentance.split() for sentance in [b for (a,b) in file_lst_preprocessed]]
+quran = [sentance.split() for sentance in [b for (a,b) in file_lst_preprocessed if a=='Quran']]
+nt = [sentance.split() for sentance in [b for (a,b) in file_lst_preprocessed if a=='NT']]
+ot = [sentance.split() for sentance in [b for (a,b) in file_lst_preprocessed if a=='OT']]
+
+id2rowd = Dictionary(all)
+common_corpus = [id2rowd.doc2bow(text) for text in all]
 
 
+lda = LdaModel(common_corpus, num_topics=20)
+"""
+    1. For each corpus, compute the average score for each topic by summing the document-topic probability for each 
+    2. document in that corpus and dividing by the total number of documents in the corpus. 
+"""
+"""
+   3. Then, for each corpus, you should identify the topic that has the highest average score (3 topics in total). 
+   4. For each of those three topics, find the top 10 tokens with highest probability of belonging to that topic.
+"""
+# Quran
+# computing topic probabilities for each document in a Quran corpus
+topic_quran = [lda.get_document_topics(id2rowd.doc2bow(text)) for text in quran]
 
+average_probs_quran = {key: 0 for key in range(20)}
+num_docs_quran = len(topic_quran)
+for doc in topic_quran:
+    for topic in doc:
+        score = topic[1] / num_docs_quran
+        average_probs_quran[topic[0]] = average_probs_quran.get(topic[0])+score
 
+print(average_probs_quran)
 
+highest_topics_quran = [a for (a,b) in sorted(list(average_probs_quran.items()), key=lambda x: x[1], reverse=True)[:3]]
+words_topic_1_quran = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_quran[0],topn=10)]
+words_topic_2_quran = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_quran[1],topn=10)]
+words_topic_3_quran = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_quran[2],topn=10)]
+# ----------------------------------------------------------------------------------------------------------------------
 
+# NT
+# computing topic probabilities for each document in a NT corpus
+topic_nt = [lda.get_document_topics(id2rowd.doc2bow(text)) for text in nt]
+# print(topic_nt)
 
+average_probs_nt = {key: 0 for key in range(20)}
+num_docs_nt = len(topic_nt)
+for doc in topic_nt:
+    for topic in doc:
+        score = topic[1] / num_docs_nt
+        average_probs_nt[topic[0]] = average_probs_nt.get(topic[0])+score
 
+print(average_probs_nt)
 
+highest_topics_nt = [a for (a,b) in sorted(list(average_probs_nt.items()), key=lambda x: x[1], reverse=True)[:3]]
+words_topic_1_nt = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_nt[0],topn=10)]
+words_topic_2_nt = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_nt[1],topn=10)]
+words_topic_3_nt = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_nt[2],topn=10)]
+# ----------------------------------------------------------------------------------------------------------------------
+
+# OT
+# computing topic probabilities for each document in a OT corpus
+topic_ot = [lda.get_document_topics(id2rowd.doc2bow(text)) for text in ot]
+# print(topic_nt)
+
+average_probs_ot = {key: 0 for key in range(20)}
+num_docs_ot = len(topic_ot)
+for doc in topic_ot:
+    for topic in doc:
+        score = topic[1] / num_docs_ot
+        average_probs_ot[topic[0]] = average_probs_ot.get(topic[0])+score
+
+print(average_probs_ot)
+
+highest_topics_ot = [a for (a,b) in sorted(list(average_probs_ot.items()), key=lambda x: x[1], reverse=True)[:3]]
+words_topic_1_ot = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_ot[0],topn=10)]
+words_topic_2_ot = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_ot[1],topn=10)]
+words_topic_3_ot = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_ot[2],topn=10)]
