@@ -125,7 +125,7 @@ print(common_corpus)
 # creating a count matrix
 # 1. make a list of dicts (one dict per doc)
 doc_dict = {key: {key: 0 for key in range(len(id2rowd))} for key in range(len(common_corpus))}
-lst_dicts = [doc_dict.get(doc).get(word[0])==word[1] for doc in common_corpus for word in doc]
+# lst_dicts = [doc_dict.get(doc)[word[0]]=word[1] for doc in common_corpus for word in doc]
 
 
 
