@@ -1,5 +1,6 @@
 import math
-
+import re
+from nltk.stem import PorterStemmer
 
 # FILE READING
 # each row is of the format:
@@ -279,13 +280,13 @@ def generate_output(results_MI_or_CS,chi,mi):
         [f.write(a+','+str(b)+'\n') for (a,b) in quran_tuples]
 
         # OT
-        f = open("NT_chi.csv", "w+")
+        f = open("OT_chi.csv", "w+")
         ot_tuples = sorted([(word,results_MI_or_CS.get(word).get('OT')) for word in results_MI_or_CS.keys()], key=lambda x : x[1])
         ot_tuples.reverse()
         [f.write(a+','+str(b)+'\n') for (a,b) in ot_tuples]
 
         # NT
-        f = open("OT_chi.csv", "w+")
+        f = open("NT_chi.csv", "w+")
         nt_tuples = sorted([(word,results_MI_or_CS.get(word).get('NT')) for word in results_MI_or_CS.keys()], key=lambda x : x[1])
         nt_tuples.reverse()
         [f.write(a+','+str(b)+'\n') for (a,b) in nt_tuples]
@@ -299,14 +300,14 @@ def generate_output(results_MI_or_CS,chi,mi):
         [f.write(a + ',' + str(b) + '\n') for (a, b) in quran_tuples]
 
         # OT
-        f = open("NT_mi.csv", "w+")
+        f = open("OT_mi.csv", "w+")
         ot_tuples = sorted([(word, results_MI_or_CS.get(word).get('OT')) for word in results_MI_or_CS.keys()],
                            key=lambda x: x[1])
         ot_tuples.reverse()
         [f.write(a + ',' + str(b) + '\n') for (a, b) in ot_tuples]
 
         # NT
-        f = open("OT_mi.csv", "w+")
+        f = open("NT_mi.csv", "w+")
         nt_tuples = sorted([(word, results_MI_or_CS.get(word).get('NT')) for word in results_MI_or_CS.keys()],
                            key=lambda x: x[1])
         nt_tuples.reverse()
@@ -320,7 +321,7 @@ def controller():
     generate_output(results_MI, False, True)
 
 
-# controller()
+controller()
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -372,6 +373,14 @@ highest_topics_quran = [a for (a,b) in sorted(list(average_probs_quran.items()),
 words_topic_1_quran = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_quran[0],topn=10)]
 words_topic_2_quran = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_quran[1],topn=10)]
 words_topic_3_quran = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_quran[2],topn=10)]
+
+print('Quran')
+print(id2rowd.get(highest_topics_quran[0]))
+print(words_topic_1_quran)
+print(id2rowd.get(highest_topics_quran[1]))
+print(words_topic_2_quran)
+print(id2rowd.get(highest_topics_quran[2]))
+print(words_topic_3_quran)
 # ----------------------------------------------------------------------------------------------------------------------
 
 # NT
@@ -392,6 +401,14 @@ highest_topics_nt = [a for (a,b) in sorted(list(average_probs_nt.items()), key=l
 words_topic_1_nt = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_nt[0],topn=10)]
 words_topic_2_nt = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_nt[1],topn=10)]
 words_topic_3_nt = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_nt[2],topn=10)]
+
+print('NT')
+print(id2rowd.get(highest_topics_nt[0]))
+print(words_topic_1_nt)
+print(id2rowd.get(highest_topics_nt[1]))
+print(words_topic_2_nt)
+print(id2rowd.get(highest_topics_nt[2]))
+print(words_topic_3_nt)
 # ----------------------------------------------------------------------------------------------------------------------
 
 # OT
@@ -412,3 +429,11 @@ highest_topics_ot = [a for (a,b) in sorted(list(average_probs_ot.items()), key=l
 words_topic_1_ot = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_ot[0],topn=10)]
 words_topic_2_ot = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_ot[1],topn=10)]
 words_topic_3_ot = [id2rowd.get(id[0]) for id in lda.get_topic_terms(highest_topics_ot[2],topn=10)]
+
+print('OT')
+print(id2rowd.get(highest_topics_ot[0]))
+print(words_topic_1_ot)
+print(id2rowd.get(highest_topics_ot[1]))
+print(words_topic_2_ot)
+print(id2rowd.get(highest_topics_ot[2]))
+print(words_topic_3_ot)

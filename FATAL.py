@@ -97,12 +97,6 @@ def stemming(sentance):
 
 file_lst_preprocessed = [(preprocess(b),a) for (a,b) in file_lst]
 
-# converting the data into numpy format
-data_np = np.array(file_lst_preprocessed)
-
-X,y = data_np[:,0],data_np[:,1]
-X_train, X_test, y_train, y_test = train_test_split( X, y, test_size=0.10, random_state=42)
-
 """
     Apply the steps in the text classification lab to this new dataset in order to get your baseline model: 
     extract BOW features and train an SVM classifier with c=1000 to predict the labels (i.e., which corpus a text belongs to). 
@@ -111,24 +105,72 @@ X_train, X_test, y_train, y_test = train_test_split( X, y, test_size=0.10, rando
 """
 from gensim.corpora.dictionary import Dictionary
 from nltk.stem.porter import *
+import scipy
+from sklearn.svm import LinearSVC
+
+data_np = np.array(file_lst_preprocessed)
+X,y = data_np[:,0],data_np[:,1]
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.1,random_state=42)
+
 
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
-all = [sentance.split() for sentance in [a for (a,b) in file_lst_preprocessed]]
+all_docs_train = [sentance.split() for sentance in X_train]
 
-# words are numbered -> IDs
-id2rowd = Dictionary(all)
-print(len(id2rowd))
-
-common_corpus = [id2rowd.doc2bow(text) for text in all]
-print(common_corpus)
-
-# creating a count matrix
-# 1. make a list of dicts (one dict per doc)
-doc_dict = {key: {key: 0 for key in range(len(id2rowd))} for key in range(len(common_corpus))}
-lst_dicts = [doc_dict.get(doc).get(word[0])==word[1] for doc in common_corpus for word in doc]
+train_vocab = set([word for sentance in all_docs_train for word in sentance])
+print(len(train_vocab))
 
 
+word2id = {}
+for word_id,word in enumerate(train_vocab):
+    word2id[word] = word_id
+print('length word2id')
+print(len(word2id))
 
+
+# and do the same for the categories
+cat2id = {}
+for cat_id,cat in enumerate(set(y_train)):
+    cat2id[cat] = cat_id
+print('length cat2id')
+print(len(cat2id))
+
+def convert_to_bow_matrix(preprocessed_data, word2id):
+    # matrix size is number of docs x vocab size + 1 (for OOV)
+    matrix_size = (len(preprocessed_data), len(word2id) + 1)
+    oov_index = len(word2id)
+    # matrix indexed by [doc_id, token_id]
+    X = scipy.sparse.dok_matrix(matrix_size)
+
+    # iterate through all documents in the dataset
+    for doc_id, doc in enumerate(preprocessed_data):
+        for word in doc:
+            # default is 0, so just add to the count for this word in this doc
+            # if the word is oov, increment the oov_index
+            X[doc_id, word2id.get(word, oov_index)] += 1
+    return X
+
+y_train = [cat2id[cat] for cat in y_train]
+print('length of y_train')
+print(len(y_train))
+X_train = convert_to_bow_matrix(all_docs_train,word2id)
+print(X_train.shape)
+model = LinearSVC(C=1000)
+# then train the model!
+model.fit(X_train,y_train)
+
+
+y_train_predictions = model.predict(X_train)
+
+def compute_accuracy(predictions, true_values):
+    num_correct = 0
+    num_total = len(predictions)
+    for predicted,true in zip(predictions,true_values):
+        if predicted==true:
+            num_correct += 1
+    return num_correct / num_total
+
+accuracy = compute_accuracy(y_train_predictions,y_train)
+print("Accuracy:",accuracy)
 
 
 
