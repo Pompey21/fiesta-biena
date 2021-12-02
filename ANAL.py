@@ -119,6 +119,9 @@ for pair in file_lst_preprocessed:
 OT_keys = dict_OT_words_count.keys()
 size_ot_dict = len(dict_OT_words_count.keys())
 
+print('---------------------------')
+print(dict_OT_words_count.get('jesu'))
+
 dict_NT_words_count = {}
 num_nt_docs = 0
 for pair in file_lst_preprocessed:
@@ -174,7 +177,8 @@ for word in all_keys:
         if 'Quran' not in docs:
             complete_dict.get(word)['Quran'] = dict_Quran_words_count.get(word,0)
 
-
+print('***********')
+print(complete_dict.get('jesu'))
 # word : book
 def mutual_information(word,book):
     x = complete_dict.get(word)
@@ -213,13 +217,15 @@ def chi_squared(word,book):
     n_0 = n - n_1
     n0_ = n - n1_
     n11 = complete_dict.get(word).get(book, 0)
+    if n11 == 0:
+        return 0
     n01 = n_1 - n11
     n10 = n1_ - n11
     n00 = n0_ - n01
 
     numerator = n * (n11*n00 - n10*n01)**2
-    denominator = n_1 * n1_ * n_0 * n0_ if n_1!=0 or n1_!=0 or n_0!=0 or n0_!=0 else 1
-    result = numerator / denominator
+    denominator = n_1 * n1_ * n_0 * n0_
+    result = numerator / denominator if denominator !=0 else 0
 
     return result
 
@@ -251,10 +257,12 @@ def return_size_other_word(word,book):
 def controller_CS():
     results_CS = {}
     for word in complete_dict.keys():
+        if word == 'jesu':
+            print('kkkkk')
         word_book_score = {}
         word_book_score['OT'] = chi_squared(word,'OT')
-        word_book_score['NT'] = chi_squared(word, 'NT')
-        word_book_score['Quran'] = chi_squared(word, 'Quran')
+        # word_book_score['NT'] = chi_squared(word, 'NT')
+        # word_book_score['Quran'] = chi_squared(word, 'Quran')
         results_CS[word] = word_book_score
     return results_CS
 
@@ -274,10 +282,10 @@ def controller_MI():
 def generate_output(results_MI_or_CS,chi,mi):
     if chi == True and mi == False:
         # Quran
-        f = open("quran_chi.csv", "w+")
-        quran_tuples = sorted([(word,results_MI_or_CS.get(word).get('Quran')) for word in results_MI_or_CS.keys()], key=lambda x : x[1])
-        quran_tuples.reverse()
-        [f.write(a+','+str(b)+'\n') for (a,b) in quran_tuples]
+        # f = open("quran_chi.csv", "w+")
+        # quran_tuples = sorted([(word,results_MI_or_CS.get(word).get('Quran')) for word in results_MI_or_CS.keys()], key=lambda x : x[1])
+        # quran_tuples.reverse()
+        # [f.write(a+','+str(b)+'\n') for (a,b) in quran_tuples]
 
         # OT
         f = open("OT_chi.csv", "w+")
@@ -286,18 +294,18 @@ def generate_output(results_MI_or_CS,chi,mi):
         [f.write(a+','+str(b)+'\n') for (a,b) in ot_tuples]
 
         # NT
-        f = open("NT_chi.csv", "w+")
-        nt_tuples = sorted([(word,results_MI_or_CS.get(word).get('NT')) for word in results_MI_or_CS.keys()], key=lambda x : x[1])
-        nt_tuples.reverse()
-        [f.write(a+','+str(b)+'\n') for (a,b) in nt_tuples]
+        # f = open("NT_chi.csv", "w+")
+        # nt_tuples = sorted([(word,results_MI_or_CS.get(word).get('NT')) for word in results_MI_or_CS.keys()], key=lambda x : x[1])
+        # nt_tuples.reverse()
+        # [f.write(a+','+str(b)+'\n') for (a,b) in nt_tuples]
 
     elif chi == False and mi == True:
         # Quran
-        f = open("quran_mi.csv", "w+")
-        quran_tuples = sorted([(word, results_MI_or_CS.get(word).get('Quran')) for word in results_MI_or_CS.keys()],
-                              key=lambda x: x[1])
-        quran_tuples.reverse()
-        [f.write(a + ',' + str(b) + '\n') for (a, b) in quran_tuples]
+        # f = open("quran_mi.csv", "w+")
+        # quran_tuples = sorted([(word, results_MI_or_CS.get(word).get('Quran')) for word in results_MI_or_CS.keys()],
+        #                       key=lambda x: x[1])
+        # quran_tuples.reverse()
+        # [f.write(a + ',' + str(b) + '\n') for (a, b) in quran_tuples]
 
         # OT
         f = open("OT_mi.csv", "w+")
@@ -307,18 +315,18 @@ def generate_output(results_MI_or_CS,chi,mi):
         [f.write(a + ',' + str(b) + '\n') for (a, b) in ot_tuples]
 
         # NT
-        f = open("NT_mi.csv", "w+")
-        nt_tuples = sorted([(word, results_MI_or_CS.get(word).get('NT')) for word in results_MI_or_CS.keys()],
-                           key=lambda x: x[1])
-        nt_tuples.reverse()
-        [f.write(a + ',' + str(b) + '\n') for (a, b) in nt_tuples]
+        # f = open("NT_mi.csv", "w+")
+        # nt_tuples = sorted([(word, results_MI_or_CS.get(word).get('NT')) for word in results_MI_or_CS.keys()],
+        #                    key=lambda x: x[1])
+        # nt_tuples.reverse()
+        # [f.write(a + ',' + str(b) + '\n') for (a, b) in nt_tuples]
 
 
 def controller():
     results_CS = controller_CS()
     generate_output(results_CS,True,False)
-    results_MI = controller_MI()
-    generate_output(results_MI, False, True)
+    # results_MI = controller_MI()
+    # generate_output(results_MI, False, True)
 
 
 controller()
