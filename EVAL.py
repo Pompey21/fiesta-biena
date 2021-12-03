@@ -1,6 +1,12 @@
 import csv
 import math
 
+class Eval:
+    def __init__(self,file_qrels,file_sys_res):
+        self.file_qrels = file_qrels
+        self.file_sys_res = file_sys_res
+
+
 # we have 10 queries
 # which documents are relevant to which query
 file_qrels = open('qrels.csv')
@@ -16,7 +22,6 @@ for elem in rows_qrels:
     if elem[0] not in qrels_dict.keys():
         qrels_dict[elem[0]] = [(elem[1],elem[2])]
     else:
-        # qrels_dict[elem[0]] = qrels_dict.get(elem[0]).append((elem[1],elem[2]))
         qrels_dict.get(elem[0]).append((elem[1],elem[2]))
 
 
@@ -317,15 +322,14 @@ def nDCG_20():
 
 
 p_10_var = p_10()
-
 r_50_var = r_50()
-
 r_precission_var = r_precission()
-
 average_precission_var = average_precission()
-print(average_precission_var)
 nDCG_10_var = nDCG_10()
 nDCG_20_var = nDCG_20()
+
+
+
 # system_results_dict
 # Generate output!
 output = open("ir_eval.csv", "w+")
