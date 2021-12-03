@@ -1,9 +1,5 @@
 import csv
 import math
-import pandas as pd
-
-# NOTES:
-# REMOVE PANDAS BEFORE SUBMISSION!
 
 # we have 10 queries
 # which documents are relevant to which query
@@ -22,19 +18,6 @@ for elem in rows_qrels:
     else:
         # qrels_dict[elem[0]] = qrels_dict.get(elem[0]).append((elem[1],elem[2]))
         qrels_dict.get(elem[0]).append((elem[1],elem[2]))
-
-# print('qrels_dictionary: ')
-# print(qrels_dict)
-# print('\n')
-
-# pandas just for reference
-qrels = pd.read_csv('qrels.csv')
-# print(qrels)
-
-
-
-
-
 
 
 # we have 6 systems
