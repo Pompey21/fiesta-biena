@@ -8,7 +8,7 @@ class Eval:
         self.p_10 = self.p_10(self.file_sys_res)
         self.r_50 = self.r_50(self.file_sys_res)
         self.r_precission = self.r_precission(self.file_sys_res)
-        self.average_precission = self.average_precission(self.file_sys_res)
+        self.average_precission = self.average_precission(self.file_sys_res,self.file_qrels)
         self.nDCG_10 = self.nDCG_10(self.file_sys_res,self.file_qrels)
         self.nDCG_20 = self.nDCG_20(self.file_sys_res,self.file_qrels)
 
@@ -72,7 +72,7 @@ class Eval:
             for query in system_results_dict.get(system).keys():
                 precision_counter = 0
                 for doc in system_results_dict.get(system).get(query)[:10]:
-                    if doc[0] in self.tuples_first(qrels_dict.get(query)):
+                    if doc[0] in self.tuples_first(self.file_qrels.get(query)):
                         precision_counter = precision_counter + 1
                 query_precission = (query, precision_counter / 10)
                 queries_precission.append(query_precission)
@@ -86,13 +86,11 @@ class Eval:
         for system in system_results_dict.keys():
             queries_recall = []
             for query in system_results_dict.get(system).keys():
-                # system_results_dict.get(system)[query] = system_results_dict.get(system).get(query)[:10]
                 recall_counter = 0
                 for doc in system_results_dict.get(system).get(query)[:50]:
-                    if doc[0] in tuples_first(qrels_dict.get(query)):
+                    if doc[0] in self.tuples_first(self.file_qrels.get(query)):
                         recall_counter = recall_counter + 1
-                query_recall = (query, recall_counter / len(tuples_first(qrels_dict.get(query))))
-                # print(query_recall)
+                query_recall = (query, recall_counter / len(self.tuples_first(self.file_qrels.get(query))))
                 queries_recall.append(query_recall)
             system_queries_recall.append(queries_recall)
         return system_queries_recall
@@ -104,32 +102,29 @@ class Eval:
         for system in system_results_dict.keys():
             queries_precission = []
             for query in system_results_dict.get(system).keys():
-                # system_results_dict.get(system)[query] = system_results_dict.get(system).get(query)[:10]
                 precision_counter = 0
-                r = len(tuples_first(qrels_dict.get(query)))
+                r = len(self.tuples_first(self.file_qrels.get(query)))
                 for doc in system_results_dict.get(system).get(query)[:r]:
-                    if doc[0] in tuples_first(qrels_dict.get(query)):
+                    if doc[0] in self.tuples_first(self.file_qrels.get(query)):
                         precision_counter = precision_counter + 1
                 query_precission = (query, precision_counter / r)
-                # print(query_precission)
                 queries_precission.append(query_precission)
             system_queries_precision.append(queries_precission)
         return system_queries_precision
 
     # Average-Precision
-    def average_precission(self,system_results_dict):
+    def average_precission(self,system_results_dict,qrels_dict):
         system_queries_average_precission = []
         for system in system_results_dict.keys():
             queries_avg_precision = []
             for query in system_results_dict.get(system).keys():
-                # print(f'Query: {query}')
                 number_docs_per_query = len(qrels_dict.get(query))
                 correct_query_count = 0
                 query_precisions = []
                 for count, doc in enumerate(system_results_dict.get(system).get(query)):
                     if number_docs_per_query == 0:
                         break
-                    if doc[0] in tuples_first(qrels_dict.get(query)):
+                    if doc[0] in self.tuples_first(qrels_dict.get(query)):
                         correct_query_count = correct_query_count + 1
                         precission = correct_query_count / (count + 1)
                         query_precisions.append(precission)
@@ -148,10 +143,10 @@ class Eval:
             queries_NDG = []
             for query in system_results_dict.get(system).keys():
                 dg_lst = []
-                ideal_order_source = fill_list([int(a) for a in tuple_second(qrels_dict.get(query))], 10)
+                ideal_order_source = self.fill_list([int(a) for a in self.tuple_second(qrels_dict.get(query))], 10)
                 for count, doc in enumerate(system_results_dict.get(system).get(query)[:10]):
-                    if doc[0] in tuples_first(qrels_dict.get(query)):
-                        rel = int(find_relevance(qrels_dict.get(query), doc[0]))
+                    if doc[0] in self.tuples_first(qrels_dict.get(query)):
+                        rel = int(self.find_relevance(qrels_dict.get(query), doc[0]))
                         rank = int(doc[1])
                         if rank == 1:
                             dg = rel
@@ -163,11 +158,11 @@ class Eval:
                         dg = 0
                         rel = 0
                         dg_lst.append(dg)
-                dcg = cumulative_dg(dg_lst)
+                dcg = self.cumulative_dg(dg_lst)
                 ideal_order_source.sort()
                 ideal_order_source.reverse()
-                idcg = cumulative_dg(ideal_dcg(ideal_order_source))
-                ndcg = divide_lst_lst(dcg, idcg)
+                idcg = self.cumulative_dg(self.ideal_dcg(ideal_order_source))
+                ndcg = self.divide_lst_lst(dcg, idcg)
                 result = ndcg[len(ndcg) - 1]
                 queries_NDG.append(result)
             system_queries_DG.append(queries_NDG)
@@ -181,10 +176,10 @@ class Eval:
             queries_NDG = []
             for query in system_results_dict.get(system).keys():
                 dg_lst = []
-                ideal_order_source = fill_list([int(a) for a in tuple_second(qrels_dict.get(query))], 20)
+                ideal_order_source = self.fill_list([int(a) for a in self.tuple_second(qrels_dict.get(query))], 20)
                 for count, doc in enumerate(system_results_dict.get(system).get(query)[:20]):
-                    if doc[0] in tuples_first(qrels_dict.get(query)):
-                        rel = int(find_relevance(qrels_dict.get(query), doc[0]))
+                    if doc[0] in self.tuples_first(qrels_dict.get(query)):
+                        rel = int(self.find_relevance(qrels_dict.get(query), doc[0]))
                         rank = int(doc[1])
                         if rank == 1:
                             dg = rel
@@ -196,11 +191,11 @@ class Eval:
                         dg = 0
                         rel = 0
                         dg_lst.append(dg)
-                dcg = cumulative_dg(dg_lst)
+                dcg = self.cumulative_dg(dg_lst)
                 ideal_order_source.sort()
                 ideal_order_source.reverse()
-                idcg = cumulative_dg(ideal_dcg(ideal_order_source))
-                ndcg = divide_lst_lst(dcg, idcg)
+                idcg = self.cumulative_dg(self.ideal_dcg(ideal_order_source))
+                ndcg = self.divide_lst_lst(dcg, idcg)
                 result = ndcg[len(ndcg) - 1]
                 queries_NDG.append(result)
             system_queries_DG.append(queries_NDG)
@@ -249,9 +244,9 @@ class Eval:
         return result
 
     # GENERATE OUTPUT
-    def generate_output()
-        output = open("ir_eval.csv", "w+")
-        for count_1, system in enumerate(system_results_dict):
+    def generate_output(self,):
+        output = open("ir_eval_test.csv", "w+")
+        for count_1, system in enumerate(self.file_sys_res):
             system_output = []
             p_10_mean = 0
             r_50_mean = 0
@@ -259,19 +254,19 @@ class Eval:
             ap_mean = 0
             ndcg10_mean = 0
             ndcg20_mean = 0
-            for count_2, query in enumerate(qrels_dict):
-                query_output = [str(count_1 + 1), str(count_2 + 1), str(round(p_10[count_1][count_2][1], 3)),
-                                str(round(r_50_var[count_1][count_2][1], 3)),
-                                str(round(r_precission_var[count_1][count_2][1], 3)),
-                                str(round(average_precission_var[count_1][count_2], 3)),
-                                str(round(nDCG_10_var[count_1][count_2], 1)),
-                                str(round(nDCG_20_var[count_1][count_2], 3))]
-                p_10_mean = p_10_mean + p_10_var[count_1][count_2][1]
-                r_50_mean = r_50_mean + r_50_var[count_1][count_2][1]
-                r_precission_mean = r_precission_mean + r_precission_var[count_1][count_2][1]
-                ap_mean = ap_mean + average_precission_var[count_1][count_2]
-                ndcg10_mean = ndcg10_mean + nDCG_10_var[count_1][count_2]
-                ndcg20_mean = ndcg20_mean + nDCG_20_var[count_1][count_2]
+            for count_2, query in enumerate(self.file_qrels):
+                query_output = [str(count_1 + 1), str(count_2 + 1), str(round(self.p_10[count_1][count_2][1], 3)),
+                                str(round(self.r_50[count_1][count_2][1], 3)),
+                                str(round(self.r_precission[count_1][count_2][1], 3)),
+                                str(round(self.average_precission[count_1][count_2], 3)),
+                                str(round(self.nDCG_10[count_1][count_2], 1)),
+                                str(round(self.nDCG_20[count_1][count_2], 3))]
+                p_10_mean = p_10_mean + self.p_10[count_1][count_2][1]
+                r_50_mean = r_50_mean + self.r_50[count_1][count_2][1]
+                r_precission_mean = r_precission_mean + self.r_precission[count_1][count_2][1]
+                ap_mean = ap_mean + self.average_precission[count_1][count_2]
+                ndcg10_mean = ndcg10_mean + self.nDCG_10[count_1][count_2]
+                ndcg20_mean = ndcg20_mean + self.nDCG_20[count_1][count_2]
 
                 query_output_str = ','.join(query_output)
                 output.write(query_output_str + '\n')
@@ -283,38 +278,13 @@ class Eval:
             query_mean_output_str = ','.join(query_mean_output)
             output.write(query_mean_output_str + '\n')
 
-# system_results_dict
-# Generate output!
-def generate_output()
-    output = open("ir_eval.csv", "w+")
-    for count_1,system in enumerate(system_results_dict):
-        system_output = []
-        p_10_mean= 0
-        r_50_mean = 0
-        r_precission_mean = 0
-        ap_mean = 0
-        ndcg10_mean = 0
-        ndcg20_mean = 0
-        for count_2, query in enumerate(qrels_dict):
-            query_output = [str(count_1+1),str(count_2+1),str(round(p_10_var[count_1][count_2][1],3)),str(round(r_50_var[count_1][count_2][1],3)),
-                            str(round(r_precission_var[count_1][count_2][1],3)),str(round(average_precission_var[count_1][count_2],3)),
-                            str(round(nDCG_10_var[count_1][count_2],1)),str(round(nDCG_20_var[count_1][count_2],3))]
-            p_10_mean = p_10_mean + p_10_var[count_1][count_2][1]
-            r_50_mean = r_50_mean + r_50_var[count_1][count_2][1]
-            r_precission_mean = r_precission_mean + r_precission_var[count_1][count_2][1]
-            ap_mean = ap_mean + average_precission_var[count_1][count_2]
-            ndcg10_mean = ndcg10_mean + nDCG_10_var[count_1][count_2]
-            ndcg20_mean = ndcg20_mean + nDCG_20_var[count_1][count_2]
 
-            query_output_str = ','.join(query_output)
-            output.write(query_output_str + '\n')
-        query_mean_output = [str(count_1+1),'mean',str(round(p_10_mean/(count_2+1),3)),str(round(r_50_mean/(count_2+1),3)),str(round(r_precission_mean/(count_2+1),3)),
-                             str(round(ap_mean/(count_2+1),3)),str(round(ndcg10_mean/(count_2+1),3)),str(round(ndcg20_mean/(count_2+1),3))]
-        query_mean_output_str = ','.join(query_mean_output)
-        output.write(query_mean_output_str + '\n')
+eval = Eval('qrels.csv','system_results.csv')
+eval.generate_output()
 
 
 
+# breakpoint()
 
 
 
