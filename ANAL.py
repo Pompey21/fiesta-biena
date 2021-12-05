@@ -1,6 +1,6 @@
 import math
-import re
-from nltk.stem import PorterStemmer
+
+
 
 # FILE READING
 # each row is of the format:
