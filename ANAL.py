@@ -386,23 +386,23 @@ for doc in topic_quran:
 
 print(average_probs_quran)
 
-highest_topics_quran = [a for (a,b) in sorted(list(average_probs_quran.items()), key=lambda x: x[1], reverse=True)[:3]]
+highest_topics_quran = [a for (a,b) in sorted(list(average_probs_quran.items()), key=lambda x: x[1], reverse=True)]
 words_topic_1_quran = [(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(highest_topics_quran[0],topn=10)]
 words_topic_2_quran = [(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(highest_topics_quran[1],topn=10)]
 words_topic_3_quran = [(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(highest_topics_quran[2],topn=10)]
 
 print('Quran')
-print(highest_topics_quran[0])
-print(words_topic_1_quran)
-print(id2rowd.get(highest_topics_quran[1]))
-print(words_topic_2_quran)
-print(id2rowd.get(highest_topics_quran[2]))
-print(words_topic_3_quran)
+# print(highest_topics_quran[0])
+# print(words_topic_1_quran)
+# print(id2rowd.get(highest_topics_quran[1]))
+# print(words_topic_2_quran)
+# print(id2rowd.get(highest_topics_quran[2]))
+# print(words_topic_3_quran)
 
 for topic in highest_topics_quran:
     print()
-    print(f'topic: {highest_topics_quran[topic]}')
-    print([(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(highest_topics_quran[topic],topn=10)])
+    print(f'topic: {topic}')
+    print([(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(topic,topn=10)])
 
 # ----------------------------------------------------------------------------------------------------------------------
 print()
@@ -420,18 +420,24 @@ for doc in topic_nt:
 
 print(average_probs_nt)
 
-highest_topics_nt = [a for (a,b) in sorted(list(average_probs_nt.items()), key=lambda x: x[1], reverse=True)[:3]]
+highest_topics_nt = [a for (a,b) in sorted(list(average_probs_nt.items()), key=lambda x: x[1], reverse=True)]
 words_topic_1_nt = [(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(highest_topics_nt[0],topn=10)]
 words_topic_2_nt = [(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(highest_topics_nt[1],topn=10)]
 words_topic_3_nt = [(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(highest_topics_nt[2],topn=10)]
 
-# print('NT')
+print('NT')
 # print(id2rowd.get(highest_topics_nt[0]))
 # print(words_topic_1_nt)
 # print(id2rowd.get(highest_topics_nt[1]))
 # print(words_topic_2_nt)
 # print(id2rowd.get(highest_topics_nt[2]))
 # print(words_topic_3_nt)
+
+for topic in highest_topics_nt:
+    print()
+    print(f'topic: {topic}')
+    print([(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(topic,topn=10)])
+
 # ----------------------------------------------------------------------------------------------------------------------
 print()
 # OT
@@ -448,18 +454,24 @@ for doc in topic_ot:
 
 print(average_probs_ot)
 
-highest_topics_ot = [a for (a,b) in sorted(list(average_probs_ot.items()), key=lambda x: x[1], reverse=True)[:3]]
+highest_topics_ot = [a for (a,b) in sorted(list(average_probs_ot.items()), key=lambda x: x[1], reverse=True)]
 words_topic_1_ot = [(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(highest_topics_ot[0],topn=10)]
 words_topic_2_ot = [(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(highest_topics_ot[1],topn=10)]
 words_topic_3_ot = [(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(highest_topics_ot[2],topn=10)]
 
-# print('OT')
+print('OT')
 # print(id2rowd.get(highest_topics_ot[0]))
 # print(words_topic_1_ot)
 # print(id2rowd.get(highest_topics_ot[1]))
 # print(words_topic_2_ot)
 # print(id2rowd.get(highest_topics_ot[2]))
 # print(words_topic_3_ot)
+
+for topic in highest_topics_ot:
+    print()
+    print(f'topic: {topic}')
+    print([(id2rowd.get(id),prob) for (id,prob) in lda.get_topic_terms(topic,topn=10)])
+
 
 
 print()
