@@ -55,7 +55,7 @@ def preprocess(text):
     return text
 
 def preprocess_improves(text):
-    text = stemming(stop_words(text))
+    text = (stop_words(text))
     return text
 """
 ---------------------    
@@ -132,20 +132,36 @@ test_file_processed = [(preprocess(b),a) for (a,b) in file_test]
 #          *******************************************
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-def convert_to_bow_matrix(preprocessed_data, word2id):
+def convert_to_bow_matrix(preprocessed_data, word2id, tfidf):
     # matrix size is number of docs x vocab size + 1 (for OOV)
     matrix_size = (len(preprocessed_data), len(word2id) + 1)
     oov_index = len(word2id)
     # matrix indexed by [doc_id, token_id]
     X = scipy.sparse.dok_matrix(matrix_size)
 
+
     # iterate through all documents in the dataset
     for doc_id, doc in enumerate(preprocessed_data):
         for word in doc:
             # default is 0, so just add to the count for this word in this doc
             # if the word is oov, increment the oov_index
-            X[doc_id, word2id.get(word, oov_index)] += 1
+            X[doc_id, word2id.get(word, oov_index)] += 1#/len(doc)
+    if tfidf==False:
+        return X
+
+
+
+    df = np.count_nonzero(X.toarray(), axis=0)
+    for doc_id, doc in enumerate(preprocessed_data):
+        for word in list(set(doc)):
+            # default is 0, so just add to the count for this word in this doc
+            # if the word is oov, increment the oov_index
+            tf = X[doc_id, word2id.get(word, oov_index)]
+            N = len(X)
+            result = (1+math.log(tf,10))*(math.log(N/df[word2id.get(word, oov_index)],10))
+            X[doc_id, word2id.get(word, oov_index)] = result
     return X
+
 # TRAIN DEV FILE
 data_np = np.array(file_lst_preprocessed)
 X,y = data_np[:,0],data_np[:,1]
@@ -165,10 +181,10 @@ for cat_id,cat in enumerate(set(y_train)):
     cat2id[cat] = cat_id
 
 y_train = [cat2id[cat] for cat in y_train]
-X_train = convert_to_bow_matrix(all_docs_train,word2id)
+X_train = convert_to_bow_matrix(all_docs_train,word2id,False)
 
 y_test = [cat2id[cat] for cat in y_test]
-X_test = convert_to_bow_matrix(all_docs_test,word2id)
+X_test = convert_to_bow_matrix(all_docs_test,word2id,False)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -218,7 +234,7 @@ test_data_np = np.array(test_file_processed)
 all_docs_test_file = [sentance.split() for sentance in test_data_np[:,0]]
 
 test_file_y = [cat2id[cat] for cat in test_data_np[:,1]]
-test_file_X = convert_to_bow_matrix(all_docs_test_file,word2id)
+test_file_X = convert_to_bow_matrix(all_docs_test_file,word2id,False)
 test_file_y_predictions = model.predict(test_file_X)
 
 
@@ -250,12 +266,12 @@ for cat_id,cat in enumerate(set(y_train_improved)):
     cat2id_improved[cat] = cat_id
 
 y_train_improved = [cat2id_improved[cat] for cat in y_train_improved]
-X_train_improved = convert_to_bow_matrix(all_docs_train_improved,word2id_improved)
+X_train_improved = convert_to_bow_matrix(all_docs_train_improved,word2id_improved,False)
 
 y_test_improved = [cat2id_improved[cat] for cat in y_test_improved]
-X_test_improved = convert_to_bow_matrix(all_docs_test_improved,word2id_improved)
+X_test_improved = convert_to_bow_matrix(all_docs_test_improved,word2id_improved,False)
 
-model_improved = LinearSVC(C=50,max_iter=10000)
+model_improved = LinearSVC(C=10)
 model_improved.fit(X_train_improved,y_train_improved)
 
 y_train_predictions_improved = model_improved.predict(X_train_improved)
@@ -278,7 +294,7 @@ test_data_np_improved = np.array(test_file_processed_improved)
 all_docs_test_file_improved = [sentance.split() for sentance in test_data_np_improved[:,0]]
 
 test_file_y_improved = [cat2id_improved[cat] for cat in test_data_np_improved[:,1]]
-test_file_X_improved = convert_to_bow_matrix(all_docs_test_file_improved,word2id_improved)
+test_file_X_improved = convert_to_bow_matrix(all_docs_test_file_improved,word2id_improved,False)
 test_file_y_predictions_improved = np.array(model_improved.predict(test_file_X_improved))
 
 
@@ -296,7 +312,7 @@ split=['train','dev','test','train','dev','test']
 # system_and_split = list(set([(sys,spl) for sys in system for spl in split]))
 system_and_split=[('baseline','train'),('baseline','dev'),('baseline','test'),
                   ('improved','train'),('improved','dev'),('improved','test')]
-output = open("classification_c50_stop_stem.csv", "w+")
+output = open("classification.csv", "w+")
 first_line = 'system,split,p-quran,r-quran,f-quran,p-ot,r-ot,f-ot,p-nt,r-nt,f-nt,p-macro,r-macro,f-macro\n'
 output.write(first_line)
 for count,pair in enumerate(system_and_split):
@@ -439,6 +455,29 @@ for count,pair in enumerate(system_and_split):
     start a new section called "Classification" and provide these 3 examples and your hypotheses about why these 
     were classified incorrectly. 
 """
+# wrong_classified_index = [(count,elem1,elem2) for count,elem1 in enumerate(y_test_predictions) for elem2 in y_test if elem1 != elem2]
+# wrong_classified_sentances = [(sentance,elem1,elem2) for count2,sentance in enumerate(X_test) for (count,elem1,elem2) in wrong_classified_index if count==count2]
+
+#
+wrong_classified_index = []
+
+
+# wrong_classified_sentances = []
+# for triple in wrong_classified_index:
+#     element = (X_test[triple[0]],triple[1],triple[2])
+#     wrong_classified_sentances.append(element)
+# print(wrong_classified_sentances)
+
+
+
+
+
+
+
+print()
+
+
+
 
 """
     Based on those 3 examples and any others you want to inspect from the development set, try to improve the results 

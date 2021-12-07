@@ -363,7 +363,7 @@ id2rowd = Dictionary(all)
 common_corpus = [id2rowd.doc2bow(text) for text in all]
 
 
-lda = LdaModel(common_corpus,  num_topics=20, passes=30, random_state=53)
+lda = LdaModel(common_corpus, num_topics=20, passes=30, random_state=53)
 """
     1. For each corpus, compute the average score for each topic by summing the document-topic probability for each
     2. document in that corpus and dividing by the total number of documents in the corpus.
