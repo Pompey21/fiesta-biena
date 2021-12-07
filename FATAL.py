@@ -11,6 +11,7 @@ from gensim.corpora.dictionary import Dictionary
 from nltk.stem.porter import *
 import scipy
 from sklearn.svm import SVC, LinearSVC
+from sklearn.metrics import classification_report
 
 # TIMESTAMP
 datetime_beginning = datetime.now()
@@ -52,6 +53,10 @@ with open('test.tsv','r') as f_test:
 def preprocess(text):
     text = tokenisation(text)
     return text
+
+def preprocess_improves(text):
+    text = stemming(stop_words(text))
+    return text
 """
 ---------------------    
     TOKENISATION
@@ -92,32 +97,36 @@ def tokenisation(sentance):
     STOPWORD REMOVAL
 --------------------------
 """
-# def stop_words(sentance):
-#     stop_words = open("stop-words.txt", "r").read()
-#     stop_words = set(stop_words.split('\n'))
-#
-#     sentance_lst = sentance.split()
-#     clean_sentance_lst = []
-#
-#     for word in sentance_lst:
-#         if word not in stop_words:
-#             clean_sentance_lst.append(word)
-#     sentance = ' '.join(clean_sentance_lst)
-#     return sentance
+def stop_words(sentance):
+    stop_words = open("stop-words.txt", "r").read()
+    stop_words = set(stop_words.split('\n'))
+
+    sentance_lst = sentance.split()
+    clean_sentance_lst = []
+
+    for word in sentance_lst:
+        if word not in stop_words:
+            clean_sentance_lst.append(word)
+    sentance = ' '.join(clean_sentance_lst)
+    return sentance
 
 """
 ------------------
     STEMMING
 ------------------ 
 """
-# def stemming(sentance):
-#     ps = PorterStemmer()
-#     sentance_lst = sentance.split()
-#     sentance = ' '.join([ps.stem(x) for x in sentance_lst])
-#     return sentance
+def stemming(sentance):
+    ps = PorterStemmer()
+    sentance_lst = sentance.split()
+    sentance = ' '.join([ps.stem(x) for x in sentance_lst])
+    return sentance
 
 file_lst_preprocessed = [(preprocess(b),a) for (a,b) in file_lst]
 test_file_processed = [(preprocess(b),a) for (a,b) in file_test]
+
+# IMPROVED
+file_lst_preprocessed_improved = [(preprocess_improves(b),a) for (a,b) in file_lst]
+test_file_processed_improved = [(preprocess_improves(b),a) for (a,b) in file_test]
 """
     Apply the steps in the text classification lab to this new dataset in order to get your baseline model: 
     extract BOW features and train an SVM classifier with c=1000 to predict the labels (i.e., which corpus a text belongs to). 
@@ -149,7 +158,6 @@ def convert_to_bow_matrix(preprocessed_data, word2id):
 data_np = np.array(file_lst_preprocessed)
 X,y = data_np[:,0],data_np[:,1]
 X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.1,random_state=42)
-
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train = [sentance.split() for sentance in X_train]
 all_docs_test = [sentance.split() for sentance in X_test]
@@ -176,6 +184,35 @@ test_data_np = np.array(test_file_processed)
 test_file_y = [cat2id[cat] for cat in test_data_np[:,1]]
 test_file_X = convert_to_bow_matrix(test_data_np[:,0],word2id)
 
+# IMPROVEMENT
+data_np_improved = np.array(file_lst_preprocessed_improved)
+X_improved,y_improved = data_np_improved[:,0],data_np_improved[:,1]
+X_train_improved,X_test_improved,y_train_improved,y_test_improved = train_test_split(X_improved,y_improved,test_size=0.1,random_state=42)
+# 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
+all_docs_train_improved = [sentance.split() for sentance in X_train_improved]
+all_docs_test_improved = [sentance.split() for sentance in X_test_improved]
+
+# model can only be trained on the vocabulary from the training set!
+train_vocab_improved = set([word for sentance in all_docs_train_improved for word in sentance])
+word2id_improved = {}
+for word_id,word in enumerate(train_vocab_improved):
+    word2id_improved[word] = word_id
+
+# and do the same for the categories
+cat2id_improved = {}
+for cat_id,cat in enumerate(set(y_train_improved)):
+    cat2id_improved[cat] = cat_id
+
+y_train_improved = [cat2id_improved[cat] for cat in y_train_improved]
+X_train_improved = convert_to_bow_matrix(all_docs_train_improved,word2id_improved)
+
+y_test_improved = [cat2id_improved[cat] for cat in y_test_improved]
+X_test_improved = convert_to_bow_matrix(all_docs_test_improved,word2id_improved)
+
+# TEST FILE
+test_data_np_improved = np.array(test_file_processed_improved)
+test_file_y_improved = [cat2id_improved[cat] for cat in test_data_np_improved[:,1]]
+test_file_X_improved = convert_to_bow_matrix(test_data_np_improved[:,0],word2id_improved)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          *******************************************
@@ -184,15 +221,23 @@ test_file_X = convert_to_bow_matrix(test_data_np[:,0],word2id)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 
-model = LinearSVC(C=1000)
+model = SVC(C=1000)
 # then train the model!
 model.fit(X_train,y_train)
 
 
 y_train_predictions = model.predict(X_train)
 y_test_predictions = model.predict(X_test)
-
 test_file_y_predictions = model.predict(test_file_X)
+
+
+# IMPROVED
+model_improved = SVC(C=1000)
+model_improved.fit(X_train_improved,y_train_improved)
+
+y_train_predictions_improved = model_improved.predict(X_train_improved)
+y_test_predictions_improved = model_improved.predict(X_test_improved)
+test_file_y_predictions_improved = model_improved.predict(test_file_X_improved)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          *******************************************
 #                  5. PERFORMANCE ESTIMATION
@@ -206,8 +251,6 @@ test_file_y_predictions = model.predict(test_file_X)
     (compute these metrics) on both the training and development splits that you created 
     (i.e., don't train on documents from the development set). 
 """
-from sklearn.metrics import classification_report
-
 y_train = np.array(y_train)
 class_rep_train = classification_report(y_train,y_train_predictions,output_dict=True)
 
@@ -223,22 +266,167 @@ class_rep_test_file = classification_report(test_file_y,test_file_y_predictions,
 
 print()
 
+# IMPROVED
+y_train_improved = np.array(y_train_improved)
+class_rep_train_improved = classification_report(y_train_improved,y_train_predictions_improved,output_dict=True)
+
+print(class_rep_train_improved)
+
+y_test_improved = np.array(y_test_improved)
+class_rep_test_improved = classification_report(y_test_improved,y_test_predictions_improved,output_dict=True)
+
+# TEST FILE
+test_file_y_predictions_improved = np.array(test_file_y_predictions_improved)
+class_rep_test_file_improved = classification_report(test_file_y_improved,test_file_y_predictions_improved,output_dict=True)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          *******************************************
 #                     6. GENERATING OUTPUT
 #          *******************************************
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
+system=['baseline','baseline','baseline','improved','improved','improved']
+split=['train','dev','test','train','dev','test']
+# system_and_split = list(set([(sys,spl) for sys in system for spl in split]))
+system_and_split=[('baseline','train'),('baseline','dev'),('baseline','test'),
+                  ('improved','train'),('improved','dev'),('improved','test')]
+output = open("classification.csv", "w+")
+first_line = 'system,split,p-quran,r-quran,f-quran,p-ot,r-ot,f-ot,p-nt,r-nt,f-nt,p-macro,r-macro,f-macr\n'
+output.write(first_line)
+for count,pair in enumerate(system_and_split):
+    line_output = pair[0]+','+pair[1]
+    if pair[0]=='baseline':
+        if pair[1]=='train':
+            # Quran
+            p_quran = str(round(class_rep_train.get('1').get('precision'),3))
+            r_quran = str(round(class_rep_train.get('1').get('recall'),3))
+            f1_quran = str(round(class_rep_train.get('1').get('f1-score'),3))
+            # OT
+            p_ot = str(round(class_rep_train.get('0').get('precision'),3))
+            r_ot = str(round(class_rep_train.get('0').get('recall'),3))
+            f1_ot = str(round(class_rep_train.get('0').get('f1-score'),3))
+            # NT
+            p_nt = str(round(class_rep_train.get('2').get('precision'),3))
+            r_nt = str(round(class_rep_train.get('2').get('recall'),3))
+            f1_nt = str(round(class_rep_train.get('2').get('f1-score'),3))
+            # Overall -> Macro
+            p_macro = str(round(class_rep_train.get('macro avg').get('precision'),3))
+            r_macro = str(round(class_rep_train.get('macro avg').get('recall'),3))
+            f1_macro = str(round(class_rep_train.get('macro avg').get('f1-score'),3))
 
+            line_output = line_output+','+p_quran+','+r_quran+','+f1_quran+','+p_ot+','+r_ot+','+f1_ot+','+p_nt+','+r_nt+','+f1_nt+','+p_macro+','+r_macro+','+f1_macro+'\n'
 
-# query_mean_output = [str(count_1 + 1), 'mean', str(round(p_10_mean / (count_2 + 1), 3)),
-#                                  str(round(r_50_mean / (count_2 + 1), 3)),
-#                                  str(round(r_precission_mean / (count_2 + 1), 3)),
-#                                  str(round(ap_mean / (count_2 + 1), 3)), str(round(ndcg10_mean / (count_2 + 1), 3)),
-#                                  str(round(ndcg20_mean / (count_2 + 1), 3))]
-#             query_mean_output_str = ','.join(query_mean_output)
-#             output.write(query_mean_output_str + '\n')
+            output.write(line_output)
 
+        elif pair[1] == 'dev':
+            # Quran
+            p_quran = str(round(class_rep_test.get('1').get('precision'),3))
+            r_quran = str(round(class_rep_test.get('1').get('recall'),3))
+            f1_quran = str(round(class_rep_test.get('1').get('f1-score'),3))
+            # OT
+            p_ot = str(round(class_rep_test.get('0').get('precision'),3))
+            r_ot = str(round(class_rep_test.get('0').get('recall'),3))
+            f1_ot = str(round(class_rep_test.get('0').get('f1-score'),3))
+            # NT
+            p_nt = str(round(class_rep_test.get('2').get('precision'),3))
+            r_nt = str(round(class_rep_test.get('2').get('recall'),3))
+            f1_nt = str(round(class_rep_test.get('2').get('f1-score'),3))
+            # Overall -> Macro
+            p_macro = str(round(class_rep_test.get('macro avg').get('precision'),3))
+            r_macro = str(round(class_rep_test.get('macro avg').get('recall'),3))
+            f1_macro = str(round(class_rep_test.get('macro avg').get('f1-score'),3))
+
+            line_output = line_output + ',' + p_quran + ',' + r_quran + ',' + f1_quran + ','+p_ot + ',' + r_ot + ',' + f1_ot + ','+p_nt + ',' + r_nt + ',' + f1_nt + ',' + p_macro + ',' + r_macro + ',' + f1_macro + '\n'
+
+            output.write(line_output)
+
+        elif pair[1] == 'test':
+            # Quran
+            p_quran = str(round(class_rep_test_file.get('1').get('precision'),3))
+            r_quran = str(round(class_rep_test_file.get('1').get('recall'),3))
+            f1_quran = str(round(class_rep_test_file.get('1').get('f1-score'),3))
+            # OT
+            p_ot = str(round(class_rep_test_file.get('0').get('precision'),3))
+            r_ot = str(round(class_rep_test_file.get('0').get('recall'),3))
+            f1_ot = str(round(class_rep_test_file.get('0').get('f1-score'),3))
+            # NT
+            p_nt = str(round(class_rep_test_file.get('2').get('precision'),3))
+            r_nt = str(round(class_rep_test_file.get('2').get('recall'),3))
+            f1_nt = str(round(class_rep_test_file.get('2').get('f1-score'),3))
+            # Overall -> Macro
+            p_macro = str(round(class_rep_test_file.get('macro avg').get('precision'),3))
+            r_macro = str(round(class_rep_test_file.get('macro avg').get('recall'),3))
+            f1_macro = str(round(class_rep_test_file.get('macro avg').get('f1-score'),3))
+
+            line_output = line_output + ',' + p_quran + ',' + r_quran + ',' + f1_quran + ','+p_ot + ',' + r_ot + ',' + f1_ot + ','+p_nt + ',' + r_nt + ',' + f1_nt + ',' + p_macro + ',' + r_macro + ',' + f1_macro + '\n'
+
+            output.write(line_output)
+
+    elif pair[0]=='improved':
+        if pair[1]=='train':
+            # Quran
+            p_quran = str(round(class_rep_train_improved.get('1').get('precision'),3))
+            r_quran = str(round(class_rep_train_improved.get('1').get('recall'),3))
+            f1_quran = str(round(class_rep_train_improved.get('1').get('f1-score'),3))
+            # OT
+            p_ot = str(round(class_rep_train_improved.get('0').get('precision'),3))
+            r_ot = str(round(class_rep_train_improved.get('0').get('recall'),3))
+            f1_ot = str(round(class_rep_train_improved.get('0').get('f1-score'),3))
+            # NT
+            p_nt = str(round(class_rep_train_improved.get('2').get('precision'),3))
+            r_nt = str(round(class_rep_train_improved.get('2').get('recall'),3))
+            f1_nt = str(round(class_rep_train_improved.get('2').get('f1-score'),3))
+            # Overall -> Macro
+            p_macro = str(round(class_rep_train_improved.get('macro avg').get('precision'),3))
+            r_macro = str(round(class_rep_train_improved.get('macro avg').get('recall'),3))
+            f1_macro = str(round(class_rep_train_improved.get('macro avg').get('f1-score'),3))
+
+            line_output = line_output+','+p_quran+','+r_quran+','+f1_quran+','+p_ot+','+r_ot+','+f1_ot+','+p_nt+','+r_nt+','+f1_nt+','+p_macro+','+r_macro+','+f1_macro+'\n'
+
+            output.write(line_output)
+
+        elif pair[1] == 'dev':
+            # Quran
+            p_quran = str(round(class_rep_test_improved.get('1').get('precision'),3))
+            r_quran = str(round(class_rep_test_improved.get('1').get('recall'),3))
+            f1_quran = str(round(class_rep_test_improved.get('1').get('f1-score'),3))
+            # OT
+            p_ot = str(round(class_rep_test_improved.get('0').get('precision'),3))
+            r_ot = str(round(class_rep_test_improved.get('0').get('recall'),3))
+            f1_ot = str(round(class_rep_test_improved.get('0').get('f1-score'),3))
+            # NT
+            p_nt = str(round(class_rep_test_improved.get('2').get('precision'),3))
+            r_nt = str(round(class_rep_test_improved.get('2').get('recall'),3))
+            f1_nt = str(round(class_rep_test_improved.get('2').get('f1-score'),3))
+            # Overall -> Macro
+            p_macro = str(round(class_rep_test_improved.get('macro avg').get('precision'),3))
+            r_macro = str(round(class_rep_test_improved.get('macro avg').get('recall'),3))
+            f1_macro = str(round(class_rep_test_improved.get('macro avg').get('f1-score'),3))
+
+            line_output = line_output + ',' + p_quran + ',' + r_quran + ',' + f1_quran + ','+p_ot + ',' + r_ot + ',' + f1_ot + ','+p_nt + ',' + r_nt + ',' + f1_nt + ',' + p_macro + ',' + r_macro + ',' + f1_macro + '\n'
+
+            output.write(line_output)
+
+        elif pair[1] == 'test':
+            # Quran
+            p_quran = str(round(class_rep_test_file_improved.get('1').get('precision'),3))
+            r_quran = str(round(class_rep_test_file_improved.get('1').get('recall'),3))
+            f1_quran = str(round(class_rep_test_file_improved.get('1').get('f1-score'),3))
+            # OT
+            p_ot = str(round(class_rep_test_file_improved.get('0').get('precision'),3))
+            r_ot = str(round(class_rep_test_file_improved.get('0').get('recall'),3))
+            f1_ot = str(round(class_rep_test_file_improved.get('0').get('f1-score'),3))
+            # NT
+            p_nt = str(round(class_rep_test_file_improved.get('2').get('precision'),3))
+            r_nt = str(round(class_rep_test_file_improved.get('2').get('recall'),3))
+            f1_nt = str(round(class_rep_test_file_improved.get('2').get('f1-score'),3))
+            # Overall -> Macro
+            p_macro = str(round(class_rep_test_file_improved.get('macro avg').get('precision'),3))
+            r_macro = str(round(class_rep_test_file_improved.get('macro avg').get('recall'),3))
+            f1_macro = str(round(class_rep_test_file_improved.get('macro avg').get('f1-score'),3))
+
+            line_output = line_output + ',' + p_quran + ',' + r_quran + ',' + f1_quran + ','+p_ot + ',' + r_ot + ',' + f1_ot + ','+p_nt + ',' + r_nt + ',' + f1_nt + ',' + p_macro + ',' + r_macro + ',' + f1_macro + '\n'
+
+            output.write(line_output)
 """
     Identify 3 instances from the development set that the baseline system labels incorrectly. In your report, 
     start a new section called "Classification" and provide these 3 examples and your hypotheses about why these 
@@ -269,6 +457,19 @@ print()
     - Note: it is okay if your test results are different from the development set results, but if the difference is 
     significant, please discuss why you think that is the case in your report. 
 """
+
+
+"""
+    1. change the preprocessing 
+    2. feature selection (e.g., only using the top N features with the highest MI scores) 
+    3. change the SVM parameters
+"""
+
+
+
+
+
+
 
 datetime_end = datetime.now()
 print(datetime_end)
