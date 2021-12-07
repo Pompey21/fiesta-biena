@@ -39,7 +39,7 @@ with open('test.tsv','r') as f_test:
         file_test.append((corpus_id, text))
 
 
-
+print()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          *******************************************
 #                       2. PREPROCESSING
@@ -124,15 +124,7 @@ def stemming(sentance):
 file_lst_preprocessed = [(preprocess(b),a) for (a,b) in file_lst]
 test_file_processed = [(preprocess(b),a) for (a,b) in file_test]
 
-# IMPROVED
-file_lst_preprocessed_improved = [(preprocess_improves(b),a) for (a,b) in file_lst]
-test_file_processed_improved = [(preprocess_improves(b),a) for (a,b) in file_test]
-"""
-    Apply the steps in the text classification lab to this new dataset in order to get your baseline model: 
-    extract BOW features and train an SVM classifier with c=1000 to predict the labels (i.e., which corpus a text belongs to). 
-    Note that the input data format is slightly different this time, but you will still need to convert to BOW features. 
-    You may reuse your code from the lab. 
-"""
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          *******************************************
@@ -157,12 +149,11 @@ def convert_to_bow_matrix(preprocessed_data, word2id):
 # TRAIN DEV FILE
 data_np = np.array(file_lst_preprocessed)
 X,y = data_np[:,0],data_np[:,1]
-X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.1,random_state=42)
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.1,random_state=0)
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train = [sentance.split() for sentance in X_train]
 all_docs_test = [sentance.split() for sentance in X_test]
 
-# model can only be trained on the vocabulary from the training set!
 train_vocab = set([word for sentance in all_docs_train for word in sentance])
 word2id = {}
 for word_id,word in enumerate(train_vocab):
@@ -179,40 +170,6 @@ X_train = convert_to_bow_matrix(all_docs_train,word2id)
 y_test = [cat2id[cat] for cat in y_test]
 X_test = convert_to_bow_matrix(all_docs_test,word2id)
 
-# TEST FILE
-test_data_np = np.array(test_file_processed)
-test_file_y = [cat2id[cat] for cat in test_data_np[:,1]]
-test_file_X = convert_to_bow_matrix(test_data_np[:,0],word2id)
-
-# IMPROVEMENT
-data_np_improved = np.array(file_lst_preprocessed_improved)
-X_improved,y_improved = data_np_improved[:,0],data_np_improved[:,1]
-X_train_improved,X_test_improved,y_train_improved,y_test_improved = train_test_split(X_improved,y_improved,test_size=0.1,random_state=42)
-# 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
-all_docs_train_improved = [sentance.split() for sentance in X_train_improved]
-all_docs_test_improved = [sentance.split() for sentance in X_test_improved]
-
-# model can only be trained on the vocabulary from the training set!
-train_vocab_improved = set([word for sentance in all_docs_train_improved for word in sentance])
-word2id_improved = {}
-for word_id,word in enumerate(train_vocab_improved):
-    word2id_improved[word] = word_id
-
-# and do the same for the categories
-cat2id_improved = {}
-for cat_id,cat in enumerate(set(y_train_improved)):
-    cat2id_improved[cat] = cat_id
-
-y_train_improved = [cat2id_improved[cat] for cat in y_train_improved]
-X_train_improved = convert_to_bow_matrix(all_docs_train_improved,word2id_improved)
-
-y_test_improved = [cat2id_improved[cat] for cat in y_test_improved]
-X_test_improved = convert_to_bow_matrix(all_docs_test_improved,word2id_improved)
-
-# TEST FILE
-test_data_np_improved = np.array(test_file_processed_improved)
-test_file_y_improved = [cat2id_improved[cat] for cat in test_data_np_improved[:,1]]
-test_file_X_improved = convert_to_bow_matrix(test_data_np_improved[:,0],word2id_improved)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          *******************************************
@@ -221,23 +178,13 @@ test_file_X_improved = convert_to_bow_matrix(test_data_np_improved[:,0],word2id_
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 
-model = SVC(C=1000)
+model = LinearSVC(C=1000)
 # then train the model!
 model.fit(X_train,y_train)
 
-
 y_train_predictions = model.predict(X_train)
 y_test_predictions = model.predict(X_test)
-test_file_y_predictions = model.predict(test_file_X)
 
-
-# IMPROVED
-model_improved = SVC(C=1000)
-model_improved.fit(X_train_improved,y_train_improved)
-
-y_train_predictions_improved = model_improved.predict(X_train_improved)
-y_test_predictions_improved = model_improved.predict(X_test_improved)
-test_file_y_predictions_improved = model_improved.predict(test_file_X_improved)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          *******************************************
 #                  5. PERFORMANCE ESTIMATION
@@ -252,35 +199,95 @@ test_file_y_predictions_improved = model_improved.predict(test_file_X_improved)
     (i.e., don't train on documents from the development set). 
 """
 y_train = np.array(y_train)
-class_rep_train = classification_report(y_train,y_train_predictions,output_dict=True)
+class_rep_train = classification_report(y_train,y_train_predictions,output_dict=True,zero_division=1)
 
 print(class_rep_train)
 
 y_test = np.array(y_test)
-class_rep_test = classification_report(y_test,y_test_predictions,output_dict=True)
-
-# TEST FILE
-test_file_y_predictions = np.array(test_file_y_predictions)
-class_rep_test_file = classification_report(test_file_y,test_file_y_predictions,output_dict=True)
+class_rep_test = classification_report(y_test,y_test_predictions,output_dict=True,zero_division=1)
 
 
 print()
 
-# IMPROVED
-y_train_improved = np.array(y_train_improved)
-class_rep_train_improved = classification_report(y_train_improved,y_train_predictions_improved,output_dict=True)
-
-print(class_rep_train_improved)
-
-y_test_improved = np.array(y_test_improved)
-class_rep_test_improved = classification_report(y_test_improved,y_test_predictions_improved,output_dict=True)
-
-# TEST FILE
-test_file_y_predictions_improved = np.array(test_file_y_predictions_improved)
-class_rep_test_file_improved = classification_report(test_file_y_improved,test_file_y_predictions_improved,output_dict=True)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          *******************************************
-#                     6. GENERATING OUTPUT
+#                        6. TEST FILE
+#          *******************************************
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+test_data_np = np.array(test_file_processed)
+all_docs_test_file = [sentance.split() for sentance in test_data_np[:,0]]
+
+test_file_y = [cat2id[cat] for cat in test_data_np[:,1]]
+test_file_X = convert_to_bow_matrix(all_docs_test_file,word2id)
+test_file_y_predictions = model.predict(test_file_X)
+
+
+test_file_y_predictions = np.array(test_file_y_predictions)
+class_rep_test_file = classification_report(test_file_y,test_file_y_predictions,output_dict=True,zero_division=1)
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#          *******************************************
+#                        7. IMPROVED
+#          *******************************************
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+file_lst_preprocessed_improved = [(preprocess_improves(b),a) for (a,b) in file_lst]
+
+data_np_improved = np.array(file_lst_preprocessed_improved)
+X_improved,y_improved = data_np_improved[:,0],data_np_improved[:,1]
+X_train_improved,X_test_improved,y_train_improved,y_test_improved = train_test_split(X_improved,y_improved,test_size=0.1,random_state=42)
+# 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
+all_docs_train_improved = [sentance.split() for sentance in X_train_improved]
+all_docs_test_improved = [sentance.split() for sentance in X_test_improved]
+
+train_vocab_improved = set([word for sentance in all_docs_train_improved for word in sentance])
+word2id_improved = {}
+for word_id,word in enumerate(train_vocab_improved):
+    word2id_improved[word] = word_id
+
+cat2id_improved = {}
+for cat_id,cat in enumerate(set(y_train_improved)):
+    cat2id_improved[cat] = cat_id
+
+y_train_improved = [cat2id_improved[cat] for cat in y_train_improved]
+X_train_improved = convert_to_bow_matrix(all_docs_train_improved,word2id_improved)
+
+y_test_improved = [cat2id_improved[cat] for cat in y_test_improved]
+X_test_improved = convert_to_bow_matrix(all_docs_test_improved,word2id_improved)
+
+model_improved = LinearSVC(C=50,max_iter=10000)
+model_improved.fit(X_train_improved,y_train_improved)
+
+y_train_predictions_improved = model_improved.predict(X_train_improved)
+y_test_predictions_improved = model_improved.predict(X_test_improved)
+
+
+y_train_improved = np.array(y_train_improved)
+class_rep_train_improved = classification_report(y_train_improved,y_train_predictions_improved,output_dict=True,zero_division=1)
+
+
+y_test_improved = np.array(y_test_improved)
+class_rep_test_improved = classification_report(y_test_improved,y_test_predictions_improved,output_dict=True,zero_division=1)
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #                   Test File Improved
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+test_file_processed_improved = [(preprocess_improves(b),a) for (a,b) in file_test]
+test_data_np_improved = np.array(test_file_processed_improved)
+
+all_docs_test_file_improved = [sentance.split() for sentance in test_data_np_improved[:,0]]
+
+test_file_y_improved = [cat2id_improved[cat] for cat in test_data_np_improved[:,1]]
+test_file_X_improved = convert_to_bow_matrix(all_docs_test_file_improved,word2id_improved)
+test_file_y_predictions_improved = np.array(model_improved.predict(test_file_X_improved))
+
+
+class_rep_test_file_improved = classification_report(test_file_y_improved,test_file_y_predictions_improved,output_dict=True,zero_division=1)
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#          *******************************************
+#                     8. GENERATING OUTPUT
 #          *******************************************
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -289,8 +296,8 @@ split=['train','dev','test','train','dev','test']
 # system_and_split = list(set([(sys,spl) for sys in system for spl in split]))
 system_and_split=[('baseline','train'),('baseline','dev'),('baseline','test'),
                   ('improved','train'),('improved','dev'),('improved','test')]
-output = open("classification.csv", "w+")
-first_line = 'system,split,p-quran,r-quran,f-quran,p-ot,r-ot,f-ot,p-nt,r-nt,f-nt,p-macro,r-macro,f-macr\n'
+output = open("classification_c50_stop_stem.csv", "w+")
+first_line = 'system,split,p-quran,r-quran,f-quran,p-ot,r-ot,f-ot,p-nt,r-nt,f-nt,p-macro,r-macro,f-macro\n'
 output.write(first_line)
 for count,pair in enumerate(system_and_split):
     line_output = pair[0]+','+pair[1]
@@ -445,7 +452,7 @@ for count,pair in enumerate(system_and_split):
 """
     Six days before the deadline, the test set will be released. Without making any further changes to your baseline or 
     improved models, train on your training set and evaluate on the new test set you just collected. Report all of your 
-    results in a file called classification.csv with the following format: 
+    results in a file called classification_c50_stop_stem.csv with the following format: 
 """
 
 
