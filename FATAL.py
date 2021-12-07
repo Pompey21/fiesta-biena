@@ -166,6 +166,7 @@ def convert_to_bow_matrix(preprocessed_data, word2id, tfidf):
 data_np = np.array(file_lst_preprocessed)
 X,y = data_np[:,0],data_np[:,1]
 X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.1,random_state=0)
+X_proper_text = X_test.copy()
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train = [sentance.split() for sentance in X_train]
 all_docs_test = [sentance.split() for sentance in X_test]
@@ -458,8 +459,14 @@ for count,pair in enumerate(system_and_split):
 # wrong_classified_index = [(count,elem1,elem2) for count,elem1 in enumerate(y_test_predictions) for elem2 in y_test if elem1 != elem2]
 # wrong_classified_sentances = [(sentance,elem1,elem2) for count2,sentance in enumerate(X_test) for (count,elem1,elem2) in wrong_classified_index if count==count2]
 
-#
+joined = np.concatenate((y_test_predictions,y_test.T),axis=0)
 wrong_classified_index = []
+for i in range(len(y_test)):
+    if y_test.tolist()[i]!=y_test_predictions.tolist()[i]:
+        wrong_classified_index.append((y_test.tolist()[i],y_test_predictions.tolist()[i],X_proper_text[i]))
+
+print(wrong_classified_index)
+
 
 
 # wrong_classified_sentances = []
