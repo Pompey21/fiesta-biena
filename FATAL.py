@@ -55,7 +55,7 @@ def preprocess(text):
     return text
 
 def preprocess_improves(text):
-    text = (stop_words(text))
+    text = tokenisation(text)
     return text
 """
 ---------------------    
@@ -85,7 +85,7 @@ def numbers(sentance):
 """
 # splitting at not alphabetic characers
 def tokenisation(sentance):
-    sentance_list = list(set(re.split('\W+', sentance)))
+    sentance_list = list((re.split('\W+', sentance)))
     sentance_list_new = []
     for word in sentance_list:
         word_new = case_folding(numbers(word))
@@ -149,23 +149,29 @@ def convert_to_bow_matrix(preprocessed_data, word2id, tfidf):
     if tfidf==False:
         return X
 
-
-
-    df = np.count_nonzero(X.toarray(), axis=0)
     for doc_id, doc in enumerate(preprocessed_data):
         for word in list(set(doc)):
             # default is 0, so just add to the count for this word in this doc
             # if the word is oov, increment the oov_index
-            tf = X[doc_id, word2id.get(word, oov_index)]
-            N = len(X)
-            result = (1+math.log(tf,10))*(math.log(N/df[word2id.get(word, oov_index)],10))
-            X[doc_id, word2id.get(word, oov_index)] = result
+            X[doc_id, word2id.get(word, oov_index)] += 1/len(doc)
+
     return X
+
+    # df = np.count_nonzero(X.toarray(), axis=0)
+    # for doc_id, doc in enumerate(preprocessed_data):
+    #     for word in list(set(doc)):
+    #         # default is 0, so just add to the count for this word in this doc
+    #         # if the word is oov, increment the oov_index
+    #         tf = X[doc_id, word2id.get(word, oov_index)]
+    #         N = len(X)
+    #         result = (1+math.log(tf,10))*(math.log(N/df[word2id.get(word, oov_index)],10))
+    #         X[doc_id, word2id.get(word, oov_index)] = result
+    # return X
 
 # TRAIN DEV FILE
 data_np = np.array(file_lst_preprocessed)
 X,y = data_np[:,0],data_np[:,1]
-X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.1,random_state=0)
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.8,random_state=69)
 X_proper_text = X_test.copy()
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train = [sentance.split() for sentance in X_train]
@@ -195,7 +201,7 @@ X_test = convert_to_bow_matrix(all_docs_test,word2id,False)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 
-model = LinearSVC(C=1000)
+model = SVC(C=1000)
 # then train the model!
 model.fit(X_train,y_train)
 
@@ -216,12 +222,12 @@ y_test_predictions = model.predict(X_test)
     (i.e., don't train on documents from the development set). 
 """
 y_train = np.array(y_train)
-class_rep_train = classification_report(y_train,y_train_predictions,output_dict=True,zero_division=1)
+class_rep_train = classification_report(y_train,y_train_predictions,output_dict=True)
 
 print(class_rep_train)
 
 y_test = np.array(y_test)
-class_rep_test = classification_report(y_test,y_test_predictions,output_dict=True,zero_division=1)
+class_rep_test = classification_report(y_test,y_test_predictions,output_dict=True)
 
 
 print()
@@ -240,7 +246,7 @@ test_file_y_predictions = model.predict(test_file_X)
 
 
 test_file_y_predictions = np.array(test_file_y_predictions)
-class_rep_test_file = classification_report(test_file_y,test_file_y_predictions,output_dict=True,zero_division=1)
+class_rep_test_file = classification_report(test_file_y,test_file_y_predictions,output_dict=True)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -252,7 +258,7 @@ file_lst_preprocessed_improved = [(preprocess_improves(b),a) for (a,b) in file_l
 
 data_np_improved = np.array(file_lst_preprocessed_improved)
 X_improved,y_improved = data_np_improved[:,0],data_np_improved[:,1]
-X_train_improved,X_test_improved,y_train_improved,y_test_improved = train_test_split(X_improved,y_improved,test_size=0.1,random_state=42)
+X_train_improved,X_test_improved,y_train_improved,y_test_improved = train_test_split(X_improved,y_improved,test_size=0.8,random_state=69)
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train_improved = [sentance.split() for sentance in X_train_improved]
 all_docs_test_improved = [sentance.split() for sentance in X_test_improved]
@@ -272,7 +278,7 @@ X_train_improved = convert_to_bow_matrix(all_docs_train_improved,word2id_improve
 y_test_improved = [cat2id_improved[cat] for cat in y_test_improved]
 X_test_improved = convert_to_bow_matrix(all_docs_test_improved,word2id_improved,False)
 
-model_improved = LinearSVC(C=10)
+model_improved = SVC(C=1000)
 model_improved.fit(X_train_improved,y_train_improved)
 
 y_train_predictions_improved = model_improved.predict(X_train_improved)
@@ -280,11 +286,11 @@ y_test_predictions_improved = model_improved.predict(X_test_improved)
 
 
 y_train_improved = np.array(y_train_improved)
-class_rep_train_improved = classification_report(y_train_improved,y_train_predictions_improved,output_dict=True,zero_division=1)
+class_rep_train_improved = classification_report(y_train_improved,y_train_predictions_improved,output_dict=True)
 
 
 y_test_improved = np.array(y_test_improved)
-class_rep_test_improved = classification_report(y_test_improved,y_test_predictions_improved,output_dict=True,zero_division=1)
+class_rep_test_improved = classification_report(y_test_improved,y_test_predictions_improved,output_dict=True)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #                   Test File Improved
@@ -299,7 +305,7 @@ test_file_X_improved = convert_to_bow_matrix(all_docs_test_file_improved,word2id
 test_file_y_predictions_improved = np.array(model_improved.predict(test_file_X_improved))
 
 
-class_rep_test_file_improved = classification_report(test_file_y_improved,test_file_y_predictions_improved,output_dict=True,zero_division=1)
+class_rep_test_file_improved = classification_report(test_file_y_improved,test_file_y_predictions_improved,output_dict=True)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -313,7 +319,7 @@ split=['train','dev','test','train','dev','test']
 # system_and_split = list(set([(sys,spl) for sys in system for spl in split]))
 system_and_split=[('baseline','train'),('baseline','dev'),('baseline','test'),
                   ('improved','train'),('improved','dev'),('improved','test')]
-output = open("classification.csv", "w+")
+output = open("classification_c1000_normalised.csv", "w+")
 first_line = 'system,split,p-quran,r-quran,f-quran,p-ot,r-ot,f-ot,p-nt,r-nt,f-nt,p-macro,r-macro,f-macro\n'
 output.write(first_line)
 for count,pair in enumerate(system_and_split):
@@ -466,6 +472,8 @@ for i in range(len(y_test)):
         wrong_classified_index.append((y_test.tolist()[i],y_test_predictions.tolist()[i],X_proper_text[i]))
 
 print(wrong_classified_index)
+for verse in wrong_classified_index:
+    print(verse)
 
 
 

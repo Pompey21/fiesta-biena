@@ -3,8 +3,11 @@ import math
 
 class Eval:
     def __init__(self,file_qrels,file_sys_res):
+        # Information Representation
         self.file_qrels = self.create_dict_qrels(file_qrels)
         self.file_sys_res = self.create_dict_sys_res(file_sys_res)
+
+        # Evaluation Mterics
         self.p_10 = self.p_10(self.file_sys_res)
         self.r_50 = self.r_50(self.file_sys_res)
         self.r_precission = self.r_precission(self.file_sys_res)
