@@ -291,6 +291,8 @@ class Eval:
     # GENERATE OUTPUT
     def generate_output(self,):
         output = open("ir_eval.csv", "w+")
+        header = 'system_number,query_number,P@10,R@50,r-precision,AP,nDCG@10,nDCG@20'
+        output.write(header + '\n')
         for count_1, system in enumerate(self.file_sys_res):
             system_output = []
             p_10_mean = 0
