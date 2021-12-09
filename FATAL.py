@@ -55,7 +55,7 @@ def preprocess(text):
     return text
 
 def preprocess_improves(text):
-    text = tokenisation(text)
+    text = tokenisation(top_mi_words(text))
     return text
 """
 ---------------------    
@@ -125,6 +125,45 @@ file_lst_preprocessed = [(preprocess(b),a) for (a,b) in file_lst]
 test_file_processed = [(preprocess(b),a) for (a,b) in file_test]
 
 
+# MI words - top 5000
+def top_mi_words(sentance):
+    file_lst_ot = []
+    with open('OT_mi.csv', 'r') as f:
+        for line in f.readlines():
+            (corpus_id, text) = line[:-1].split(',')
+            file_lst_ot.append((corpus_id, text))
+    file_lst_ot = file_lst_ot[:5000]
+
+    file_lst_nt = []
+    with open('NT_mi.csv', 'r') as f:
+        for line in f.readlines():
+            (corpus_id, text) = line[:-1].split(',')
+            file_lst_nt.append((corpus_id, text))
+    file_lst_nt = file_lst_nt[:5000]
+
+    file_lst_quran = []
+    with open('NT_mi.csv', 'r') as f:
+        for line in f.readlines():
+            (corpus_id, text) = line[:-1].split(',')
+            file_lst_quran.append((corpus_id, text))
+    file_lst_quran = file_lst_quran[:5000]
+
+    all = file_lst_nt+file_lst_ot+file_lst_quran
+    all = all[:5000]
+    #return all
+
+    sentance_lst = sentance.split()
+    clean_sentance_lst = []
+
+    for word in sentance_lst:
+        if word not in all:
+            clean_sentance_lst.append(word)
+    sentance = ' '.join(clean_sentance_lst)
+    return sentance
+
+
+
+# top_mi_words()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          *******************************************
@@ -171,7 +210,7 @@ def convert_to_bow_matrix(preprocessed_data, word2id, tfidf):
 # TRAIN DEV FILE
 data_np = np.array(file_lst_preprocessed)
 X,y = data_np[:,0],data_np[:,1]
-X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.8,random_state=69)
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.6,random_state=8321)
 X_proper_text = X_test.copy()
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train = [sentance.split() for sentance in X_train]
@@ -224,7 +263,7 @@ y_test_predictions = model.predict(X_test)
 y_train = np.array(y_train)
 class_rep_train = classification_report(y_train,y_train_predictions,output_dict=True)
 
-print(class_rep_train)
+# print(class_rep_train)
 
 y_test = np.array(y_test)
 class_rep_test = classification_report(y_test,y_test_predictions,output_dict=True)
@@ -258,7 +297,7 @@ file_lst_preprocessed_improved = [(preprocess_improves(b),a) for (a,b) in file_l
 
 data_np_improved = np.array(file_lst_preprocessed_improved)
 X_improved,y_improved = data_np_improved[:,0],data_np_improved[:,1]
-X_train_improved,X_test_improved,y_train_improved,y_test_improved = train_test_split(X_improved,y_improved,test_size=0.8,random_state=69)
+X_train_improved,X_test_improved,y_train_improved,y_test_improved = train_test_split(X_improved,y_improved,test_size=0.6,random_state=8321)
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train_improved = [sentance.split() for sentance in X_train_improved]
 all_docs_test_improved = [sentance.split() for sentance in X_test_improved]
@@ -273,12 +312,12 @@ for cat_id,cat in enumerate(set(y_train_improved)):
     cat2id_improved[cat] = cat_id
 
 y_train_improved = [cat2id_improved[cat] for cat in y_train_improved]
-X_train_improved = convert_to_bow_matrix(all_docs_train_improved,word2id_improved,False)
+X_train_improved = convert_to_bow_matrix(all_docs_train_improved,word2id_improved,True)
 
 y_test_improved = [cat2id_improved[cat] for cat in y_test_improved]
-X_test_improved = convert_to_bow_matrix(all_docs_test_improved,word2id_improved,False)
+X_test_improved = convert_to_bow_matrix(all_docs_test_improved,word2id_improved,True)
 
-model_improved = SVC(C=1000)
+model_improved = SVC(C=20)
 model_improved.fit(X_train_improved,y_train_improved)
 
 y_train_predictions_improved = model_improved.predict(X_train_improved)
@@ -301,7 +340,7 @@ test_data_np_improved = np.array(test_file_processed_improved)
 all_docs_test_file_improved = [sentance.split() for sentance in test_data_np_improved[:,0]]
 
 test_file_y_improved = [cat2id_improved[cat] for cat in test_data_np_improved[:,1]]
-test_file_X_improved = convert_to_bow_matrix(all_docs_test_file_improved,word2id_improved,False)
+test_file_X_improved = convert_to_bow_matrix(all_docs_test_file_improved,word2id_improved,True)
 test_file_y_predictions_improved = np.array(model_improved.predict(test_file_X_improved))
 
 
@@ -319,7 +358,7 @@ split=['train','dev','test','train','dev','test']
 # system_and_split = list(set([(sys,spl) for sys in system for spl in split]))
 system_and_split=[('baseline','train'),('baseline','dev'),('baseline','test'),
                   ('improved','train'),('improved','dev'),('improved','test')]
-output = open("classification_c1000_normalised.csv", "w+")
+output = open("classification_run2.csv", "w+")
 first_line = 'system,split,p-quran,r-quran,f-quran,p-ot,r-ot,f-ot,p-nt,r-nt,f-nt,p-macro,r-macro,f-macro\n'
 output.write(first_line)
 for count,pair in enumerate(system_and_split):
@@ -339,9 +378,9 @@ for count,pair in enumerate(system_and_split):
             r_nt = str(round(class_rep_train.get('2').get('recall'),3))
             f1_nt = str(round(class_rep_train.get('2').get('f1-score'),3))
             # Overall -> Macro
-            p_macro = str(round(class_rep_train.get('macro avg').get('precision'),3))
-            r_macro = str(round(class_rep_train.get('macro avg').get('recall'),3))
-            f1_macro = str(round(class_rep_train.get('macro avg').get('f1-score'),3))
+            p_macro = str(round(class_rep_train.get('macro avg').get('precision'),5))
+            r_macro = str(round(class_rep_train.get('macro avg').get('recall'),5))
+            f1_macro = str(round(class_rep_train.get('macro avg').get('f1-score'),5))
 
             line_output = line_output+','+p_quran+','+r_quran+','+f1_quran+','+p_ot+','+r_ot+','+f1_ot+','+p_nt+','+r_nt+','+f1_nt+','+p_macro+','+r_macro+','+f1_macro+'\n'
 
@@ -361,9 +400,9 @@ for count,pair in enumerate(system_and_split):
             r_nt = str(round(class_rep_test.get('2').get('recall'),3))
             f1_nt = str(round(class_rep_test.get('2').get('f1-score'),3))
             # Overall -> Macro
-            p_macro = str(round(class_rep_test.get('macro avg').get('precision'),3))
-            r_macro = str(round(class_rep_test.get('macro avg').get('recall'),3))
-            f1_macro = str(round(class_rep_test.get('macro avg').get('f1-score'),3))
+            p_macro = str(round(class_rep_test.get('macro avg').get('precision'),5))
+            r_macro = str(round(class_rep_test.get('macro avg').get('recall'),5))
+            f1_macro = str(round(class_rep_test.get('macro avg').get('f1-score'),5))
 
             line_output = line_output + ',' + p_quran + ',' + r_quran + ',' + f1_quran + ','+p_ot + ',' + r_ot + ',' + f1_ot + ','+p_nt + ',' + r_nt + ',' + f1_nt + ',' + p_macro + ',' + r_macro + ',' + f1_macro + '\n'
 
@@ -383,9 +422,9 @@ for count,pair in enumerate(system_and_split):
             r_nt = str(round(class_rep_test_file.get('2').get('recall'),3))
             f1_nt = str(round(class_rep_test_file.get('2').get('f1-score'),3))
             # Overall -> Macro
-            p_macro = str(round(class_rep_test_file.get('macro avg').get('precision'),3))
-            r_macro = str(round(class_rep_test_file.get('macro avg').get('recall'),3))
-            f1_macro = str(round(class_rep_test_file.get('macro avg').get('f1-score'),3))
+            p_macro = str(round(class_rep_test_file.get('macro avg').get('precision'),5))
+            r_macro = str(round(class_rep_test_file.get('macro avg').get('recall'),5))
+            f1_macro = str(round(class_rep_test_file.get('macro avg').get('f1-score'),5))
 
             line_output = line_output + ',' + p_quran + ',' + r_quran + ',' + f1_quran + ','+p_ot + ',' + r_ot + ',' + f1_ot + ','+p_nt + ',' + r_nt + ',' + f1_nt + ',' + p_macro + ',' + r_macro + ',' + f1_macro + '\n'
 
@@ -406,9 +445,9 @@ for count,pair in enumerate(system_and_split):
             r_nt = str(round(class_rep_train_improved.get('2').get('recall'),3))
             f1_nt = str(round(class_rep_train_improved.get('2').get('f1-score'),3))
             # Overall -> Macro
-            p_macro = str(round(class_rep_train_improved.get('macro avg').get('precision'),3))
-            r_macro = str(round(class_rep_train_improved.get('macro avg').get('recall'),3))
-            f1_macro = str(round(class_rep_train_improved.get('macro avg').get('f1-score'),3))
+            p_macro = str(round(class_rep_train_improved.get('macro avg').get('precision'),5))
+            r_macro = str(round(class_rep_train_improved.get('macro avg').get('recall'),5))
+            f1_macro = str(round(class_rep_train_improved.get('macro avg').get('f1-score'),5))
 
             line_output = line_output+','+p_quran+','+r_quran+','+f1_quran+','+p_ot+','+r_ot+','+f1_ot+','+p_nt+','+r_nt+','+f1_nt+','+p_macro+','+r_macro+','+f1_macro+'\n'
 
@@ -428,9 +467,9 @@ for count,pair in enumerate(system_and_split):
             r_nt = str(round(class_rep_test_improved.get('2').get('recall'),3))
             f1_nt = str(round(class_rep_test_improved.get('2').get('f1-score'),3))
             # Overall -> Macro
-            p_macro = str(round(class_rep_test_improved.get('macro avg').get('precision'),3))
-            r_macro = str(round(class_rep_test_improved.get('macro avg').get('recall'),3))
-            f1_macro = str(round(class_rep_test_improved.get('macro avg').get('f1-score'),3))
+            p_macro = str(round(class_rep_test_improved.get('macro avg').get('precision'),5))
+            r_macro = str(round(class_rep_test_improved.get('macro avg').get('recall'),5))
+            f1_macro = str(round(class_rep_test_improved.get('macro avg').get('f1-score'),5))
 
             line_output = line_output + ',' + p_quran + ',' + r_quran + ',' + f1_quran + ','+p_ot + ',' + r_ot + ',' + f1_ot + ','+p_nt + ',' + r_nt + ',' + f1_nt + ',' + p_macro + ',' + r_macro + ',' + f1_macro + '\n'
 
@@ -450,9 +489,9 @@ for count,pair in enumerate(system_and_split):
             r_nt = str(round(class_rep_test_file_improved.get('2').get('recall'),3))
             f1_nt = str(round(class_rep_test_file_improved.get('2').get('f1-score'),3))
             # Overall -> Macro
-            p_macro = str(round(class_rep_test_file_improved.get('macro avg').get('precision'),3))
-            r_macro = str(round(class_rep_test_file_improved.get('macro avg').get('recall'),3))
-            f1_macro = str(round(class_rep_test_file_improved.get('macro avg').get('f1-score'),3))
+            p_macro = str(round(class_rep_test_file_improved.get('macro avg').get('precision'),5))
+            r_macro = str(round(class_rep_test_file_improved.get('macro avg').get('recall'),5))
+            f1_macro = str(round(class_rep_test_file_improved.get('macro avg').get('f1-score'),5))
 
             line_output = line_output + ',' + p_quran + ',' + r_quran + ',' + f1_quran + ','+p_ot + ',' + r_ot + ',' + f1_ot + ','+p_nt + ',' + r_nt + ',' + f1_nt + ',' + p_macro + ',' + r_macro + ',' + f1_macro + '\n'
 
@@ -462,31 +501,11 @@ for count,pair in enumerate(system_and_split):
     start a new section called "Classification" and provide these 3 examples and your hypotheses about why these 
     were classified incorrectly. 
 """
-# wrong_classified_index = [(count,elem1,elem2) for count,elem1 in enumerate(y_test_predictions) for elem2 in y_test if elem1 != elem2]
-# wrong_classified_sentances = [(sentance,elem1,elem2) for count2,sentance in enumerate(X_test) for (count,elem1,elem2) in wrong_classified_index if count==count2]
-
 joined = np.concatenate((y_test_predictions,y_test.T),axis=0)
 wrong_classified_index = []
 for i in range(len(y_test)):
     if y_test.tolist()[i]!=y_test_predictions.tolist()[i]:
         wrong_classified_index.append((y_test.tolist()[i],y_test_predictions.tolist()[i],X_proper_text[i]))
-
-print(wrong_classified_index)
-for verse in wrong_classified_index:
-    print(verse)
-
-
-
-# wrong_classified_sentances = []
-# for triple in wrong_classified_index:
-#     element = (X_test[triple[0]],triple[1],triple[2])
-#     wrong_classified_sentances.append(element)
-# print(wrong_classified_sentances)
-
-
-
-
-
 
 
 print()
@@ -502,13 +521,6 @@ print()
     However, remember that your final goal is to build a system that will work well on the test set, which is a randomly 
     held-out set of documents from the original corpora. 
 """
-
-"""
-    Six days before the deadline, the test set will be released. Without making any further changes to your baseline or 
-    improved models, train on your training set and evaluate on the new test set you just collected. Report all of your 
-    results in a file called classification_c50_stop_stem.csv with the following format: 
-"""
-
 
 """
     In your report on this assignment, in the "Classification" section, please explain how you managed to improve the 
