@@ -150,7 +150,8 @@ def top_mi_words(sentance):
     file_lst_quran = file_lst_quran[:5000]
 
     all = file_lst_nt+file_lst_ot+file_lst_quran
-    all = [elem[0] for elem in all.sort(key=lambda x:x[1])[:5000]]
+    all.sort(key=lambda x:float(x[1]))
+    all = [elem[0] for elem in all[:5000]]
     #return all
 
     sentance_lst = sentance.split()
@@ -187,7 +188,8 @@ def top_chi_words(sentance):
     file_lst_quran = file_lst_quran[:5000]
 
     all = file_lst_nt+file_lst_ot+file_lst_quran
-    all = [elem[0] for elem in all.sort(key=lambda x:x[1])[:5000]]
+    all.sort(key=lambda x: float(x[1]))
+    all = [elem[0] for elem in all[:5000]]
     #return all
 
     sentance_lst = sentance.split()

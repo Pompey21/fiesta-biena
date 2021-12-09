@@ -4,6 +4,20 @@ from scipy import stats
 import math
 import re
 from nltk.stem import PorterStemmer
+import csv
+import math
+import pandas as pd
+import re
+import collections
+from nltk.stem import PorterStemmer
+import numpy as np
+from sklearn.model_selection import train_test_split
+from datetime import datetime
+from gensim.corpora.dictionary import Dictionary
+from nltk.stem.porter import *
+import scipy
+from sklearn.svm import SVC, LinearSVC
+from sklearn.metrics import classification_report
 
 """
     TASK 1: IR EVALUATION
@@ -450,7 +464,7 @@ def stemming(sentance):
 
 
 file_lst_preprocessed = [(a,preprocess(b)) for (a,b) in file_lst]
-# UNCOMMENT
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          *******************************************
 #            3. COUNT WORDS - Generating Dictionaries
@@ -849,20 +863,6 @@ for topic in highest_topics_ot:
 """
     TASK 3: TEXT CLASSIFICATION
 """
-import csv
-import math
-import pandas as pd
-import re
-import collections
-from nltk.stem import PorterStemmer
-import numpy as np
-from sklearn.model_selection import train_test_split
-from datetime import datetime
-from gensim.corpora.dictionary import Dictionary
-from nltk.stem.porter import *
-import scipy
-from sklearn.svm import SVC, LinearSVC
-from sklearn.metrics import classification_report
 
 # TIMESTAMP
 datetime_beginning = datetime.now()
