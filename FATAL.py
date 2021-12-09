@@ -12,6 +12,7 @@ from nltk.stem.porter import *
 import scipy
 from sklearn.svm import SVC, LinearSVC
 from sklearn.metrics import classification_report
+from sklearn.utils import shuffle
 
 # TIMESTAMP
 datetime_beginning = datetime.now()
@@ -149,7 +150,7 @@ def top_mi_words(sentance):
     file_lst_quran = file_lst_quran[:5000]
 
     all = file_lst_nt+file_lst_ot+file_lst_quran
-    all = all[:5000]
+    all = [elem[0] for elem in all.sort(key=lambda x:x[1])[:5000]]
     #return all
 
     sentance_lst = sentance.split()
@@ -186,7 +187,7 @@ def top_chi_words(sentance):
     file_lst_quran = file_lst_quran[:5000]
 
     all = file_lst_nt+file_lst_ot+file_lst_quran
-    all = all[:5000]
+    all = [elem[0] for elem in all.sort(key=lambda x:x[1])[:5000]]
     #return all
 
     sentance_lst = sentance.split()
@@ -245,9 +246,9 @@ def convert_to_bow_matrix(preprocessed_data, word2id, tfidf):
     # return X
 
 # TRAIN DEV FILE
-data_np = np.array(file_lst_preprocessed)
+data_np = shuffle(np.array(file_lst_preprocessed),random_state=8321)
 X,y = data_np[:,0],data_np[:,1]
-X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.9,random_state=8321)
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.7,random_state=8321)
 X_proper_text = X_test.copy()
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train = [sentance.split() for sentance in X_train]
@@ -395,7 +396,7 @@ split=['train','dev','test','train','dev','test']
 # system_and_split = list(set([(sys,spl) for sys in system for spl in split]))
 system_and_split=[('baseline','train'),('baseline','dev'),('baseline','test'),
                   ('improved','train'),('improved','dev'),('improved','test')]
-output = open("classification_run4.csv", "w+")
+output = open("classification_run5.csv", "w+")
 first_line = 'system,split,p-quran,r-quran,f-quran,p-ot,r-ot,f-ot,p-nt,r-nt,f-nt,p-macro,r-macro,f-macro\n'
 output.write(first_line)
 for count,pair in enumerate(system_and_split):
