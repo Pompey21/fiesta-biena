@@ -248,9 +248,9 @@ def convert_to_bow_matrix(preprocessed_data, word2id, tfidf):
     # return X
 
 # TRAIN DEV FILE
-data_np = shuffle(np.array(file_lst_preprocessed),random_state=8321)
-X,y = data_np[:,0],data_np[:,1]
-X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.7,random_state=8321)
+data_np = np.array(file_lst_preprocessed)
+X,y = shuffle(data_np[:,0],data_np[:,1])
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.9,random_state=8321)
 X_proper_text = X_test.copy()
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train = [sentance.split() for sentance in X_train]
@@ -336,7 +336,7 @@ class_rep_test_file = classification_report(test_file_y,test_file_y_predictions,
 file_lst_preprocessed_improved = [(preprocess_improves(b),a) for (a,b) in file_lst]
 
 data_np_improved = np.array(file_lst_preprocessed_improved)
-X_improved,y_improved = data_np_improved[:,0],data_np_improved[:,1]
+X_improved,y_improved = shuffle(data_np_improved[:,0],data_np_improved[:,1])
 X_train_improved,X_test_improved,y_train_improved,y_test_improved = train_test_split(X_improved,y_improved,test_size=0.9,random_state=8321)
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train_improved = [sentance.split() for sentance in X_train_improved]
@@ -352,12 +352,12 @@ for cat_id,cat in enumerate(set(y_train_improved)):
     cat2id_improved[cat] = cat_id
 
 y_train_improved = [cat2id_improved[cat] for cat in y_train_improved]
-X_train_improved = convert_to_bow_matrix(all_docs_train_improved,word2id_improved,True)
+X_train_improved = convert_to_bow_matrix(all_docs_train_improved,word2id_improved,False)
 
 y_test_improved = [cat2id_improved[cat] for cat in y_test_improved]
-X_test_improved = convert_to_bow_matrix(all_docs_test_improved,word2id_improved,True)
+X_test_improved = convert_to_bow_matrix(all_docs_test_improved,word2id_improved,False)
 
-model_improved = SVC(C=20)
+model_improved = SVC(C=10)
 model_improved.fit(X_train_improved,y_train_improved)
 
 y_train_predictions_improved = model_improved.predict(X_train_improved)
@@ -380,7 +380,7 @@ test_data_np_improved = np.array(test_file_processed_improved)
 all_docs_test_file_improved = [sentance.split() for sentance in test_data_np_improved[:,0]]
 
 test_file_y_improved = [cat2id_improved[cat] for cat in test_data_np_improved[:,1]]
-test_file_X_improved = convert_to_bow_matrix(all_docs_test_file_improved,word2id_improved,True)
+test_file_X_improved = convert_to_bow_matrix(all_docs_test_file_improved,word2id_improved,False)
 test_file_y_predictions_improved = np.array(model_improved.predict(test_file_X_improved))
 
 
@@ -398,7 +398,7 @@ split=['train','dev','test','train','dev','test']
 # system_and_split = list(set([(sys,spl) for sys in system for spl in split]))
 system_and_split=[('baseline','train'),('baseline','dev'),('baseline','test'),
                   ('improved','train'),('improved','dev'),('improved','test')]
-output = open("classification_run5.csv", "w+")
+output = open("classification_run6.csv", "w+")
 first_line = 'system,split,p-quran,r-quran,f-quran,p-ot,r-ot,f-ot,p-nt,r-nt,f-nt,p-macro,r-macro,f-macro\n'
 output.write(first_line)
 for count,pair in enumerate(system_and_split):
@@ -549,38 +549,6 @@ for i in range(len(y_test)):
 
 
 print()
-
-
-
-
-"""
-    Based on those 3 examples and any others you want to inspect from the development set, try to improve the results 
-    of your classifier (you should have already experimented with ways to do this in the lab). You may change the 
-    preprocessing, feature selection (e.g., only using the top N features with the highest MI scores), change the SVM 
-    parameters, etc. You should create a system that improves over the baseline when evaluted on the development set. 
-    However, remember that your final goal is to build a system that will work well on the test set, which is a randomly 
-    held-out set of documents from the original corpora. 
-"""
-
-"""
-    In your report on this assignment, in the "Classification" section, please explain how you managed to improve the 
-    performance compared to the baseline system, and mention how much gain in the Macro-F1 score you could achieve with 
-    your improved method when evaluted on the dev set, and how much gain on the test set. Why did you make the changes 
-    that you did?
-    - Note: it is okay if your test results are different from the development set results, but if the difference is 
-    significant, please discuss why you think that is the case in your report. 
-"""
-
-
-"""
-    1. change the preprocessing 
-    2. feature selection (e.g., only using the top N features with the highest MI scores) 
-    3. change the SVM parameters
-"""
-
-
-
-
 
 
 
