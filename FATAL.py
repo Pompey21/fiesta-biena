@@ -162,6 +162,43 @@ def top_mi_words(sentance):
     return sentance
 
 
+# CHI SQ words - top 5000
+def top_chi_words(sentance):
+    file_lst_ot = []
+    with open('OT_chi.csv', 'r') as f:
+        for line in f.readlines():
+            (corpus_id, text) = line[:-1].split(',')
+            file_lst_ot.append((corpus_id, text))
+    file_lst_ot = file_lst_ot[:5000]
+
+    file_lst_nt = []
+    with open('NT_chi.csv', 'r') as f:
+        for line in f.readlines():
+            (corpus_id, text) = line[:-1].split(',')
+            file_lst_nt.append((corpus_id, text))
+    file_lst_nt = file_lst_nt[:5000]
+
+    file_lst_quran = []
+    with open('NT_chi.csv', 'r') as f:
+        for line in f.readlines():
+            (corpus_id, text) = line[:-1].split(',')
+            file_lst_quran.append((corpus_id, text))
+    file_lst_quran = file_lst_quran[:5000]
+
+    all = file_lst_nt+file_lst_ot+file_lst_quran
+    all = all[:5000]
+    #return all
+
+    sentance_lst = sentance.split()
+    clean_sentance_lst = []
+
+    for word in sentance_lst:
+        if word not in all:
+            clean_sentance_lst.append(word)
+    sentance = ' '.join(clean_sentance_lst)
+    return sentance
+
+
 
 # top_mi_words()
 
@@ -210,7 +247,7 @@ def convert_to_bow_matrix(preprocessed_data, word2id, tfidf):
 # TRAIN DEV FILE
 data_np = np.array(file_lst_preprocessed)
 X,y = data_np[:,0],data_np[:,1]
-X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.6,random_state=8321)
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.9,random_state=8321)
 X_proper_text = X_test.copy()
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train = [sentance.split() for sentance in X_train]
@@ -297,7 +334,7 @@ file_lst_preprocessed_improved = [(preprocess_improves(b),a) for (a,b) in file_l
 
 data_np_improved = np.array(file_lst_preprocessed_improved)
 X_improved,y_improved = data_np_improved[:,0],data_np_improved[:,1]
-X_train_improved,X_test_improved,y_train_improved,y_test_improved = train_test_split(X_improved,y_improved,test_size=0.6,random_state=8321)
+X_train_improved,X_test_improved,y_train_improved,y_test_improved = train_test_split(X_improved,y_improved,test_size=0.9,random_state=8321)
 # 1. Find all the unique terms, and give each of them a unique ID (starting from 0 to the number of terms)
 all_docs_train_improved = [sentance.split() for sentance in X_train_improved]
 all_docs_test_improved = [sentance.split() for sentance in X_test_improved]
@@ -358,7 +395,7 @@ split=['train','dev','test','train','dev','test']
 # system_and_split = list(set([(sys,spl) for sys in system for spl in split]))
 system_and_split=[('baseline','train'),('baseline','dev'),('baseline','test'),
                   ('improved','train'),('improved','dev'),('improved','test')]
-output = open("classification_run2.csv", "w+")
+output = open("classification_run4.csv", "w+")
 first_line = 'system,split,p-quran,r-quran,f-quran,p-ot,r-ot,f-ot,p-nt,r-nt,f-nt,p-macro,r-macro,f-macro\n'
 output.write(first_line)
 for count,pair in enumerate(system_and_split):
@@ -501,7 +538,7 @@ for count,pair in enumerate(system_and_split):
     start a new section called "Classification" and provide these 3 examples and your hypotheses about why these 
     were classified incorrectly. 
 """
-joined = np.concatenate((y_test_predictions,y_test.T),axis=0)
+# joined = np.concatenate((y_test_predictions,y_test.T),axis=0)
 wrong_classified_index = []
 for i in range(len(y_test)):
     if y_test.tolist()[i]!=y_test_predictions.tolist()[i]:
